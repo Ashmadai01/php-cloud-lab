@@ -1,0 +1,1 @@
+<div class="container"><div class="empty"><div class="big">404</div><h1>Page not found</h1><p>The page you're looking for doesn't exist.</p><a class="btn btn-primary" href="<?= url('/') ?>">Go home</a></div></div>

@@ -1,0 +1,15 @@
+# SDUT Swap — public document root only. Deny sensitive paths.
+Options -Indexes
+php_flag display_errors Off
+php_flag expose_php Off
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+<FilesMatch "(\.env|\.git|composer\.json|.*\.sql|.*\.log)$">
+Require all denied
+</FilesMatch>

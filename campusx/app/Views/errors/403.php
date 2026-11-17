@@ -1,0 +1,1 @@
+<div class="container"><div class="empty"><div class="big">403</div><h1>Forbidden</h1><p>You don't have permission to view this page.</p><a class="btn btn-primary" href="<?= url('/') ?>">Go home</a></div></div>

@@ -1,0 +1,6 @@
+# Block direct access to app internals when docroot is project root (XAMPP misconfig guard).
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^(app|database|storage|tests|tools|config)/ - [F,L]
+RewriteRule ^\.env - [F,L]
+</IfModule>

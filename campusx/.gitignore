@@ -1,0 +1,14 @@
+/vendor/
+.env
+storage/uploads/*
+storage/private/*
+storage/logs/*
+!storage/uploads/.gitkeep
+!storage/private/.gitkeep
+!storage/logs/.gitkeep
+*.log
+.DS_Store
+.idea/
+.vscode/
+backups/
+*.sql.bak

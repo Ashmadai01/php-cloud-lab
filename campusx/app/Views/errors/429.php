@@ -1,0 +1,1 @@
+<div class="container"><div class="empty"><div class="big">429</div><h1>Too many requests</h1><p>Please wait a moment and try again.</p><a class="btn btn-primary" href="<?= url('/') ?>">Go home</a></div></div>

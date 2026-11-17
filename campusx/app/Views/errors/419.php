@@ -1,0 +1,1 @@
+<div class="container"><div class="empty"><div class="big">419</div><h1>Session expired</h1><p>Please refresh the page and try again.</p><a class="btn btn-primary" href="<?= url('/') ?>">Go home</a></div></div>

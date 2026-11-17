@@ -1,0 +1,1 @@
+<div class="container"><div class="empty"><div class="big">500</div><h1>Something went wrong</h1><p>Please try again later. If the problem persists, contact support.</p><a class="btn btn-primary" href="<?= url('/') ?>">Go home</a></div></div>

@@ -1,0 +1,24 @@
+{
+    "name": "sdutswap/marketplace",
+    "description": "SDUT Swap — Your Campus. Your Marketplace. University student marketplace.",
+    "type": "project",
+    "require": {
+        "php": ">=8.2",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
+        "ext-mbstring": "*",
+        "ext-fileinfo": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "SdutSwap\\": "app/"
+        }
+    },
+    "scripts": {
+        "test": "php tests/run.php",
+        "serve": "php -S 0.0.0.0:8080 -t public",
+        "upgrade-db": "php tools/upgrade.php",
+        "purge-private": "php tools/purge_private_files.php",
+        "audit": "composer audit"
+    }
+}
