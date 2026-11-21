@@ -74,70 +74,129 @@ final class ChatController extends Controller
     {
         Auth::requireLogin();
         $this->requireCsrf();
+
+        $isAjax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+
         $repo = new ChatRepository();
-        if (!$repo->isParticipant($id, Auth::id())) abort(403, 'Forbidden');
-        $other = $repo->otherParticipantId($id, Auth::id());
-        if ($other !== null && !(new BlockService(new BlockRepository(), new UserRepository()))->canMessage(Auth::id(), $other)) {
+        $userId = Auth::id();
+
+        if (!$repo->isParticipant($id, $userId)) {
+            if ($isAjax) {
+                $this->json(['error' => 'Forbidden'], 403);
+                return;
+            }
+            abort(403, 'Forbidden');
+        }
+
+        $other = $repo->otherParticipantId($id, $userId);
+
+        if ($other !== null && !(new BlockService(
+            new BlockRepository(),
+            new UserRepository()
+        ))->canMessage($userId, $other)) {
+            if ($isAjax) {
+                $this->json(['error' => 'Messaging is turned off in this conversation.'], 403);
+                return;
+            }
             flash('error', 'Messaging is turned off in this conversation.');
             redirect('/messages/' . $id);
         }
+
         $this->rateLimit('chat_send', 30, 60, 300);
-        if ($repo->recentMessageCount(Auth::id(), 5) > 50) {
+
+        if ($repo->recentMessageCount($userId, 5) > 50) {
+            if ($isAjax) {
+                $this->json(['error' => 'You are sending messages too quickly. Please slow down.'], 429);
+                return;
+            }
             abort(429, 'You are sending messages too quickly. Please slow down.');
         }
+
         $body = $this->input('body');
+
         if (mb_strlen($body) < 1 || mb_strlen($body) > 2000) {
+            if ($isAjax) {
+                $this->json(['error' => 'Message must be between 1 and 2000 characters.'], 422);
+                return;
+            }
             flash('error', 'Message must be between 1 and 2000 characters.');
             redirect('/messages/' . $id);
         }
-        // Plain text only; output-encoded in views. Block obvious contact-detail spam patterns minimally.
-        $repo->send($id, Auth::id(), $body);
+
+        $messageId = $repo->send($id, $userId, $body);
+
+        if ($isAjax) {
+            $messages = $repo->messages($id, $messageId - 1, 1);
+            $message = $messages[0] ?? null;
+
+            if (!$message) {
+                $this->json(['error' => 'Message sent, but could not be retrieved.'], 500);
+                return;
+            }
+
+            $this->json([
+                'success' => true,
+                'message' => [
+                    'id' => (int) $message['id'],
+                    'sender_id' => (int) $message['sender_id'],
+                    'sender_name' => $message['sender_name'],
+                    'body' => $message['body'],
+                    'created_at' => $message['created_at'],
+                    'is_read' => (bool) $message['is_read'],
+                ],
+            ]);
+            return;
+        }
+
         redirect('/messages/' . $id);
     }
 
-
     public function poll(int $id): void
-{
-    Auth::requireLogin();
+    {
+        Auth::requireLogin();
 
-    $repo = new ChatRepository();
-    $userId = Auth::id();
+        $repo = new ChatRepository();
+        $userId = Auth::id();
 
-    if (!$repo->isParticipant($id, $userId)) {
-        $this->json(['error' => 'Forbidden'], 403);
-        return;
+        if (!$repo->isParticipant($id, $userId)) {
+            $this->json(['error' => 'Forbidden'], 403);
+            return;
+        }
+
+        $repo->markDelivered($id, $userId);
+
+        $shouldMarkRead = (string) $this->input('read', '0') === '1';
+
+        if ($shouldMarkRead) {
+            $repo->markRead($id, $userId);
+        }
+
+        $after = (int) $this->input('after', '0');
+        $msgs = $repo->messages($id, $after > 0 ? $after : null, 50);
+
+        $out = array_map(fn($m) => [
+            'id' => (int) $m['id'],
+            'sender_id' => (int) $m['sender_id'],
+            'sender_name' => $m['sender_name'],
+            'body' => $m['body'],
+            'created_at' => $m['created_at'],
+            'is_delivered' => (bool) $m['delivered_at'],
+            'is_read' => (bool) $m['is_read'],
+        ], $msgs);
+
+        $other = $repo->otherParticipantId($id, $userId);
+        $typing = $other !== null ? $repo->isTyping($id, $other) : false;
+
+        $this->json([
+            'messages' => $out,
+            'statuses' => $repo->readStatuses($id, $userId),
+            'presence' => $other !== null
+                ? $repo->presence($other)
+                : ['online' => false, 'last_seen' => null],
+            'typing' => $typing,
+        ]);
     }
 
-    // Mark messages in this conversation as read by the current user.
-    $repo->markRead($id, $userId);
-
-    $after = (int) $this->input('after', '0');
-    $msgs = $repo->messages($id, $after > 0 ? $after : null, 50);
-
-    $out = array_map(fn($m) => [
-        'id' => (int) $m['id'],
-        'sender_id' => (int) $m['sender_id'],
-        'sender_name' => $m['sender_name'],
-        'body' => $m['body'],
-        'created_at' => $m['created_at'],
-        'is_read' => (bool) $m['is_read'],
-    ], $msgs);
-
-    $other = $repo->otherParticipantId($id, $userId);
-    $typing = $other !== null
-    ? $repo->isTyping($id, $other)
-    : false;
-
-$this->json([
-    'messages' => $out,
-    'statuses' => $repo->readStatuses($id, $userId),
-    'presence' => $other !== null
-        ? $repo->presence($other)
-        : ['online' => false, 'last_seen' => null],
-    'typing' => $typing,
-]);
-
-}
     public function typing(int $id): void
 {
     Auth::requireLogin();

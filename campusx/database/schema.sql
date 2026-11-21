@@ -164,6 +164,7 @@ CREATE TABLE IF NOT EXISTS messages (
   sender_id BIGINT UNSIGNED NOT NULL,
   body TEXT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  delivered_at TIMESTAMP NULL DEFAULT NULL,
   CONSTRAINT fk_msg_conv FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
   CONSTRAINT fk_msg_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_msg_conv_created (conversation_id, created_at)

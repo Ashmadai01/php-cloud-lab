@@ -130,6 +130,83 @@
     if (msgs.length) lastId = parseInt(msgs[msgs.length - 1].getAttribute('data-msg-id') || '0', 10);
     var delay = 4000;
     var messageInput = document.querySelector('.chat-form input[name="body"]');
+
+    // AJAX CHAT SEND
+    var chatForm = document.querySelector('.chat-form');
+
+    if (chatForm && messageInput) {
+      chatForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        if (!messageInput.value.trim()) return;
+
+        var submitButton = chatForm.querySelector('button[type="submit"]');
+        if (submitButton) submitButton.disabled = true;
+
+        var sendingStatus = document.createElement('div');
+        sendingStatus.className = 'chat-send-status';
+        sendingStatus.textContent = 'Sending...';
+        chatForm.appendChild(sendingStatus);
+
+        fetch(chatForm.action, {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-Token': csrf
+          },
+          body: new FormData(chatForm),
+          credentials: 'same-origin'
+        })
+        .then(function (response) {
+          return response.json().then(function (data) {
+            if (!response.ok || !data.success) {
+              throw new Error(data.error || 'Message could not be sent.');
+            }
+            return data;
+          });
+        })
+        .then(function (data) {
+          var m = data.message;
+          sendingStatus.textContent = 'Sent';
+          lastId = Math.max(lastId, Number(m.id));
+
+          var div = document.createElement('div');
+          div.className = 'msg mine';
+          div.setAttribute('data-msg-id', String(m.id));
+
+          var body = document.createElement('div');
+          body.className = 'message-body';
+          body.textContent = m.body;
+
+          var meta = document.createElement('div');
+          meta.className = 'meta';
+          meta.textContent = m.sender_name + ' · ' + m.created_at;
+
+          var status = document.createElement('span');
+          status.className = 'read-status';
+          status.setAttribute('data-read-status', String(m.id));
+          status.textContent = '✓';
+
+          meta.appendChild(document.createTextNode(' · '));
+          meta.appendChild(status);
+          div.appendChild(body);
+          div.appendChild(meta);
+          box.appendChild(div);
+
+          messageInput.value = '';
+          box.scrollTop = box.scrollHeight;
+        })
+        .catch(function (error) {
+          sendingStatus.textContent = 'Failed: ' + error.message;
+          sendingStatus.classList.add('send-failed');
+        })
+        .finally(function () {
+          if (submitButton) submitButton.disabled = false;
+          messageInput.focus();
+        });
+      });
+    }
+
 var typingIndicator = document.getElementById('typing-indicator');
 var typingTimer = null;
 var lastTypingSent = 0;
@@ -155,7 +232,9 @@ if (messageInput) {
 }
     function poll() {
 
-fetch('/messages/' + convId + '/poll?after=' + lastId, {
+var isChatVisible = document.visibilityState === 'visible' && document.hasFocus();
+
+fetch('/messages/' + convId + '/poll?after=' + lastId + '&read=' + (isChatVisible ? '1' : '0'), {
   headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrf },
   credentials: 'same-origin'
 }).then(function (r) {
@@ -186,7 +265,8 @@ if (presenceEl && data.presence) {
     );
 
     if (statusEl) {
-      statusEl.textContent = status.is_read ? 'Read' : 'Sent';
+      statusEl.textContent = status.is_read ? '✓✓' : (status.is_delivered ? '✓✓' : '✓');
+      statusEl.className = 'read-status' + (status.is_read ? ' status-read' : (status.is_delivered ? ' status-delivered' : ''));
     }
   });
 
@@ -210,7 +290,8 @@ if (presenceEl && data.presence) {
       var statusEl = document.createElement('span');
       statusEl.className = 'read-status';
       statusEl.setAttribute('data-read-status', String(m.id));
-      statusEl.textContent = m.is_read ? 'Read' : 'Sent';
+      statusEl.textContent = m.is_read ? '✓✓' : (m.is_delivered ? '✓✓' : '✓');
+      statusEl.className = 'read-status' + (m.is_read ? ' status-read' : (m.is_delivered ? ' status-delivered' : ''));
 
       meta.appendChild(document.createTextNode(' · '));
       meta.appendChild(statusEl);
@@ -233,6 +314,16 @@ if (presenceEl && data.presence) {
 });
 
     }
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible' && document.hasFocus()) {
+        delay = 100;
+      }
+    });
+
+    window.addEventListener('focus', function () {
+      delay = 100;
+    });
+
     setTimeout(poll, delay);
   }
 

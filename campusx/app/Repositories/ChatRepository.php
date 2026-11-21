@@ -220,6 +220,9 @@ public function readStatuses(int $convId, int $senderId): array
 {
     $s = $this->db->prepare(
         'SELECT m.id,
+                CASE WHEN m.delivered_at IS NOT NULL
+                     THEN 1 ELSE 0
+                END AS is_delivered,
                 CASE
                     WHEN reader.last_read_at IS NOT NULL
                      AND reader.last_read_at >= m.created_at
@@ -240,6 +243,7 @@ public function readStatuses(int $convId, int $senderId): array
     return array_map(function ($row) {
         return [
             'id' => (int) $row['id'],
+            'is_delivered' => (bool) $row['is_delivered'],
             'is_read' => (bool) $row['is_read'],
         ];
     }, $s->fetchAll());
@@ -252,6 +256,17 @@ public function readStatuses(int $convId, int $senderId): array
         $id = (int) $this->db->lastInsertId();
         $this->db->prepare('UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?')->execute([$convId]);
         return $id;
+    }
+
+    public function markDelivered(int $convId, int $recipientId): void
+    {
+        $this->db->prepare(
+            'UPDATE messages
+             SET delivered_at = CURRENT_TIMESTAMP
+             WHERE conversation_id = ?
+               AND sender_id != ?
+               AND delivered_at IS NULL'
+        )->execute([$convId, $recipientId]);
     }
 
     public function markRead(int $convId, int $userId): void
