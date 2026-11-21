@@ -129,6 +129,30 @@
     var msgs = box ? box.querySelectorAll('.msg') : [];
     if (msgs.length) lastId = parseInt(msgs[msgs.length - 1].getAttribute('data-msg-id') || '0', 10);
     var delay = 4000;
+    var messageInput = document.querySelector('.chat-form input[name="body"]');
+var typingIndicator = document.getElementById('typing-indicator');
+var typingTimer = null;
+var lastTypingSent = 0;
+
+if (messageInput) {
+  messageInput.addEventListener('input', function () {
+    var now = Date.now();
+
+    // Send typing status at most once every 2 seconds.
+    if (now - lastTypingSent >= 2000) {
+      lastTypingSent = now;
+
+      fetch('/messages/' + convId + '/typing', {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-Token': csrf
+        },
+        credentials: 'same-origin'
+      }).catch(function () {});
+    }
+  });
+}
     function poll() {
 
 fetch('/messages/' + convId + '/poll?after=' + lastId, {
@@ -142,6 +166,9 @@ fetch('/messages/' + convId + '/poll?after=' + lastId, {
     return;
   }
   var presenceEl = document.getElementById('presence-status');
+  if (typingIndicator) {
+  typingIndicator.style.display = data.typing ? 'block' : 'none';
+}
 
 if (presenceEl && data.presence) {
   if (data.presence.online) {

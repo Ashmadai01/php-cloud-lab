@@ -75,6 +75,38 @@ final class ChatRepository
         'last_seen' => $lastSeen,
     ];
 }
+    public function isTyping(int $conversationId, int $userId): bool
+{
+    $s = $this->db->prepare(
+        'SELECT typing_at
+         FROM conversation_participants
+         WHERE conversation_id = ?
+           AND user_id = ?
+         LIMIT 1'
+    );
+
+    $s->execute([$conversationId, $userId]);
+    $typingAt = $s->fetchColumn();
+
+    if (!$typingAt) {
+        return false;
+    }
+
+    $typingTime = strtotime($typingAt . ' UTC');
+
+    return $typingTime !== false && (time() - $typingTime) <= 3;
+}
+    public function updateTyping(int $conversationId, int $userId): void
+{
+    $s = $this->db->prepare(
+        'UPDATE conversation_participants
+         SET typing_at = UTC_TIMESTAMP()
+         WHERE conversation_id = ?
+           AND user_id = ?'
+    );
+
+    $s->execute([$conversationId, $userId]);
+}
     public function findMessage(int $messageId): ?array
     {
         $s = $this->db->prepare('SELECT id, conversation_id, sender_id FROM messages WHERE id = ? LIMIT 1');

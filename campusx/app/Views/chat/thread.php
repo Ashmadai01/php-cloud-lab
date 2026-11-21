@@ -45,6 +45,9 @@
       <p class="muted" style="text-align:center">No messages yet. Say hello!</p>
     <?php endif; ?>
   </div>
+  <div id="typing-indicator" class="muted small" style="display:none; padding:8px 12px;">
+    <span>Typing...</span>
+</div>
   <?php if (!empty($messagingBlocked)): ?>
     <div class="alert alert-info">Messaging is turned off in this conversation.<?php if (!empty($iBlocked)): ?> You have blocked this user.<?php endif; ?></div>
   <?php else: ?>

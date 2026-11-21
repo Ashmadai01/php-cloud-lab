@@ -96,7 +96,7 @@ final class ChatController extends Controller
     }
 
 
-public function poll(int $id): void
+    public function poll(int $id): void
 {
     Auth::requireLogin();
 
@@ -124,6 +124,9 @@ public function poll(int $id): void
     ], $msgs);
 
     $other = $repo->otherParticipantId($id, $userId);
+    $typing = $other !== null
+    ? $repo->isTyping($id, $other)
+    : false;
 
 $this->json([
     'messages' => $out,
@@ -131,9 +134,26 @@ $this->json([
     'presence' => $other !== null
         ? $repo->presence($other)
         : ['online' => false, 'last_seen' => null],
+    'typing' => $typing,
 ]);
-}
 
+}
+    public function typing(int $id): void
+{
+    Auth::requireLogin();
+
+    $repo = new ChatRepository();
+    $userId = Auth::id();
+
+    if (!$repo->isParticipant($id, $userId)) {
+        $this->json(['error' => 'Forbidden'], 403);
+        return;
+    }
+
+    $repo->updateTyping($id, $userId);
+
+    $this->json(['success' => true]);
+}
     public function unreadStatus(): void
 {
     Auth::requireLogin();

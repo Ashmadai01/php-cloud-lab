@@ -120,6 +120,7 @@ $router->post('/listings/{id}/message', fn($id) => $chat->start((int) $id), [$mA
 $router->get('/messages/unread', fn() => $chat->unreadStatus(), [$mAuth]);
 $router->get('/messages/{id}', fn($id) => $chat->thread((int) $id), [$mAuth]);
 $router->post('/messages/{id}/send', fn($id) => $chat->send((int) $id), [$mAuth, $mCsrf]);
+$router->post('/messages/{id}/typing', fn($id) => $chat->typing((int) $id), [$mAuth, $mCsrf]);
 $router->get('/messages/{id}/poll', fn($id) => $chat->poll((int) $id), [$mAuth]);
 
 // Support

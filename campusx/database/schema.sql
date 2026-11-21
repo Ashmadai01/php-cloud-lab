@@ -151,6 +151,7 @@ CREATE TABLE IF NOT EXISTS conversation_participants (
   conversation_id BIGINT UNSIGNED NOT NULL,
   user_id BIGINT UNSIGNED NOT NULL,
   last_read_at TIMESTAMP NULL,
+  typing_at TIMESTAMP NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_cp (conversation_id, user_id),
   CONSTRAINT fk_cp_conv FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
