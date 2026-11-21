@@ -49,7 +49,7 @@
         </div>
 
         <div class="login-forgot">
-          <a href=" '/forgot-password') ?>">Forgot password?</a >
+          <a href="<?= url('/forgot-password') ?>">Forgot password?</a>
         </div>
 
         <button class="btn btn-primary btn-block login-submit" type="submit">
