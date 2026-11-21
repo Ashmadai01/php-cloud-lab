@@ -21,7 +21,75 @@
   document.querySelectorAll('[data-flash]').forEach(function (el) {
     showToast(el.getAttribute('data-flash'), el.getAttribute('data-flash-type') || 'success');
   });
+  // Global unread message notifications
+  var unreadBadge = document.querySelector('[data-unread-badge]');
 
+  if (unreadBadge) {
+    var lastNotifiedId = null;
+
+    function checkUnreadMessages() {
+      fetch('/messages/unread', {
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(function (r) {
+        return r.ok ? r.json() : null;
+      })
+      .then(function (data) {
+        if (!data) return;
+
+        var count = Number(data.count || 0);
+
+        unreadBadge.textContent = count > 99 ? '99+' : String(count);
+        unreadBadge.hidden = count === 0;
+
+        var latest = data.latest;
+
+        if (!latest) {
+          lastNotifiedId = null;
+          return;
+        }
+
+        var messageId = Number(latest.id);
+
+        if (lastNotifiedId === null) {
+          lastNotifiedId = messageId;
+          return;
+        }
+
+        if (messageId > lastNotifiedId) {
+          lastNotifiedId = messageId;
+
+          var wrap = document.querySelector('.toast-wrap');
+          if (!wrap) {
+            wrap = document.createElement('div');
+            wrap.className = 'toast-wrap';
+            document.body.appendChild(wrap);
+          }
+
+          var link = document.createElement('a');
+          link.className = 'toast';
+          link.href = '/messages/' + latest.conversation_id;
+          link.textContent = 'New message from ' + latest.sender_name;
+          link.setAttribute('role', 'status');
+          link.style.color = '#fff';
+          link.style.textDecoration = 'none';
+
+          wrap.appendChild(link);
+
+          setTimeout(function () {
+            link.remove();
+          }, 6000);
+        }
+      })
+      .catch(function () {
+        // Retry on the next polling cycle.
+      });
+    }
+
+    checkUnreadMessages();
+    setInterval(checkUnreadMessages, 5000);
+  }
   // Mobile nav toggle
   var toggle = document.querySelector('.mobile-toggle');
   var nav = document.querySelector('.main-nav');

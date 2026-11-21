@@ -107,4 +107,12 @@ final class ChatController extends Controller
         ], $msgs);
         $this->json(['messages' => $out]);
     }
+    public function unreadStatus(): void
+{
+    Auth::requireLogin();
+
+    $this->json(
+        (new ChatRepository())->notificationStatus(Auth::id())
+    );
+}
 }

@@ -91,7 +91,36 @@ final class ChatRepository
         $s->execute([$userId, $userId]);
         return (int) $s->fetchColumn();
     }
+public function notificationStatus(int $userId): array
+{
+    $count = $this->unreadCount($userId);
 
+    $s = $this->db->prepare(
+        'SELECT m.id, m.conversation_id, u.name AS sender_name
+         FROM messages m
+         JOIN conversation_participants cp
+           ON cp.conversation_id = m.conversation_id
+          AND cp.user_id = ?
+         JOIN users u ON u.id = m.sender_id
+         WHERE m.sender_id != ?
+           AND m.created_at > COALESCE(cp.last_read_at, \'1970-01-01\')
+         ORDER BY m.id DESC
+         LIMIT 1'
+    );
+
+    $s->execute([$userId, $userId]);
+    $latest = $s->fetch() ?: null;
+
+    if ($latest) {
+        $latest['id'] = (int) $latest['id'];
+        $latest['conversation_id'] = (int) $latest['conversation_id'];
+    }
+
+    return [
+        'count' => $count,
+        'latest' => $latest,
+    ];
+}
     public function messages(int $convId, ?int $afterId = null, int $limit = 100): array
     {
         if ($afterId !== null) {

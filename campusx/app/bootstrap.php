@@ -117,6 +117,7 @@ $router->post('/listings/{lid}/images/{iid}/delete', fn($lid, $iid) => $listings
 // Chat
 $router->get('/messages', fn() => $chat->inbox(), [$mAuth]);
 $router->post('/listings/{id}/message', fn($id) => $chat->start((int) $id), [$mAuth, $mCsrf]);
+$router->get('/messages/unread', fn() => $chat->unreadStatus(), [$mAuth]);
 $router->get('/messages/{id}', fn($id) => $chat->thread((int) $id), [$mAuth]);
 $router->post('/messages/{id}/send', fn($id) => $chat->send((int) $id), [$mAuth, $mCsrf]);
 $router->get('/messages/{id}/poll', fn($id) => $chat->poll((int) $id), [$mAuth]);

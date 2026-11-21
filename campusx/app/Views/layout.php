@@ -19,7 +19,10 @@
       <a href="<?= url('/marketplace') ?>">Marketplace</a>
       <?php if (!empty($user)): ?>
         <a href="<?= url('/sell') ?>">Sell</a>
-        <a href="<?= url('/messages') ?>">Messages</a>
+        <a href="<?= url('/messages') ?>">
+    Messages
+    <span class="badge-count" data-unread-badge hidden>0</span>
+</a>
         <a href="<?= url('/favorites') ?>">Favorites</a>
         <a href="<?= url('/my-listings') ?>">My Listings</a>
         <a href="<?= url('/profile') ?>">Profile</a>
