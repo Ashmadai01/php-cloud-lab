@@ -22,6 +22,13 @@ final class SupportRepository
                 ->execute([$id, $userId, $body]);
             $messageId = (int) $this->db->lastInsertId();
             $this->addAttachments($messageId, $attachmentPaths);
+
+            (new NotificationRepository($this->db))->createForAdmins(
+                $id,
+                'ticket_created',
+                "New support ticket #{$id}: {$subject}"
+            );
+
             $this->db->commit();
             return $id;
         } catch (\Throwable $e) {
@@ -87,10 +94,42 @@ final class SupportRepository
     {
         $this->db->beginTransaction();
         try {
+            $ticketQuery = $this->db->prepare(
+                'SELECT t.user_id, u.role AS author_role
+                 FROM support_tickets t
+                 JOIN users u ON u.id = ?
+                 WHERE t.id = ?
+                 LIMIT 1'
+            );
+            $ticketQuery->execute([$authorId, $ticketId]);
+            $ticketInfo = $ticketQuery->fetch();
+
+            if (!$ticketInfo) {
+                throw new \RuntimeException('Ticket or author not found.');
+            }
+
             $this->db->prepare('INSERT INTO ticket_messages (ticket_id, author_id, body) VALUES (?, ?, ?)')->execute([$ticketId, $authorId, $body]);
             $messageId = (int) $this->db->lastInsertId();
             $this->addAttachments($messageId, $attachmentPaths);
             $this->db->prepare('UPDATE support_tickets SET updated_at = CURRENT_TIMESTAMP WHERE id = ?')->execute([$ticketId]);
+
+            $notifications = new NotificationRepository($this->db);
+
+            if ($ticketInfo['author_role'] === 'admin') {
+                $notifications->create(
+                    (int) $ticketInfo['user_id'],
+                    $ticketId,
+                    'ticket_reply',
+                    "New reply from support on ticket #{$ticketId}."
+                );
+            } else {
+                $notifications->createForAdmins(
+                    $ticketId,
+                    'ticket_reply',
+                    "New customer reply on ticket #{$ticketId}."
+                );
+            }
+
             $this->db->commit();
             return $messageId;
         } catch (\Throwable $e) {
@@ -102,6 +141,44 @@ final class SupportRepository
     public function setTicketStatus(int $id, string $status): void
     {
         $this->db->prepare('UPDATE support_tickets SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')->execute([$status, $id]);
+    }
+
+    public function setTicketPriority(int $id, string $priority): void
+    {
+        $allowed = ['low', 'normal', 'high', 'urgent'];
+        if (!in_array($priority, $allowed, true)) {
+            throw new \InvalidArgumentException('Invalid ticket priority.');
+        }
+
+        $this->db->prepare(
+            'UPDATE support_tickets SET priority = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+        )->execute([$priority, $id]);
+    }
+
+    public function addTicketActivity(
+        int $ticketId,
+        int $actorId,
+        string $action,
+        ?string $oldValue = null,
+        ?string $newValue = null
+    ): void {
+        $this->db->prepare(
+            'INSERT INTO ticket_activity (ticket_id, actor_id, action, old_value, new_value) VALUES (?, ?, ?, ?, ?)'
+        )->execute([$ticketId, $actorId, $action, $oldValue, $newValue]);
+    }
+
+    public function ticketActivity(int $ticketId): array
+    {
+        $s = $this->db->prepare(
+            'SELECT ta.*, u.name AS actor_name, u.role AS actor_role
+             FROM ticket_activity ta
+             JOIN users u ON u.id = ta.actor_id
+             WHERE ta.ticket_id = ?
+             ORDER BY ta.created_at DESC, ta.id DESC'
+        );
+        $s->execute([$ticketId]);
+
+        return $s->fetchAll();
     }
 
     public function ticketQueue(string $status = '', int $page = 1, int $perPage = 20): array

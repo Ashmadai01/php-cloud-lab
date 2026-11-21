@@ -80,21 +80,61 @@ final class SupportController extends Controller
     {
         Auth::requireLogin();
         $this->requireCsrf();
+
+        $isAjax = str_contains(
+            strtolower($_SERVER['HTTP_ACCEPT'] ?? ''),
+            'application/json'
+        );
+
         $repo = new SupportRepository();
         $ticket = $repo->findTicket($id);
+
         if (!$ticket) abort(404, 'Ticket not found');
-        if ((int) $ticket['user_id'] !== Auth::id() && !Auth::isAdmin()) abort(403, 'Forbidden');
+        if ((int) $ticket['user_id'] !== Auth::id() && !Auth::isAdmin()) {
+            abort(403, 'Forbidden');
+        }
+
         $body = $this->input('body');
+
         if (mb_strlen($body) < 1 || mb_strlen($body) > 5000) {
+            if ($isAjax) {
+                $this->json(['ok' => false, 'error' => 'Reply must be between 1 and 5000 characters.'], 422);
+            }
+
             flash('error', 'Reply must be between 1 and 5000 characters.');
             redirect('/support/tickets/' . $id);
         }
-        $files = Upload::storePrivateImages($_FILES['attachments'] ?? null, 'support', Config::int('UPLOAD_MAX_SIZE', 5242880), 3);
+
+        $files = Upload::storePrivateImages(
+            $_FILES['attachments'] ?? null,
+            'support',
+            Config::int('UPLOAD_MAX_SIZE', 5242880),
+            3
+        );
+
         $repo->reply($id, Auth::id(), $body, $files['paths']);
-        if (!Auth::isAdmin()) $repo->setTicketStatus($id, 'open');
+        $repo->addTicketActivity($id, (int) Auth::id(), 'ticket_replied', null, 'Reply added');
+
+        if (!Auth::isAdmin() && $ticket['status'] !== 'open') {
+            $repo->setTicketStatus($id, 'open');
+            $repo->addTicketActivity($id, (int) Auth::id(), 'status_changed', (string) $ticket['status'], 'open');
+        }
+
+        if ($isAjax) {
+            $messages = $repo->ticketMessages($id);
+            $message = end($messages);
+
+            $this->json([
+                'ok' => true,
+                'message' => $message,
+                'attachmentErrors' => $files['errors'],
+            ]);
+        }
+
         if ($files['errors'] !== []) {
             flash('error', 'Some attachments were not saved: ' . implode(' ', $files['errors']));
         }
+
         flash('success', 'Reply sent.');
         redirect('/support/tickets/' . $id);
     }

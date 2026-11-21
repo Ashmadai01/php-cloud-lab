@@ -5,6 +5,7 @@ namespace SdutSwap\Controllers;
 use SdutSwap\Core\Auth;
 use SdutSwap\Core\Csrf;
 use SdutSwap\Core\RateLimiter;
+use SdutSwap\Repositories\NotificationRepository;
 
 abstract class Controller
 {
@@ -12,6 +13,9 @@ abstract class Controller
     {
         http_response_code($status);
         $data['user'] = Auth::user();
+        $data['notificationUnreadCount'] = $data['user']
+            ? (new NotificationRepository())->unreadCount((int) Auth::id())
+            : 0;
         $data['flashes'] = flashes();
         $layout = \SdutSwap\Core\Config::basePath() . '/app/Views/layout.php';
         $viewFile = \SdutSwap\Core\Config::basePath() . '/app/Views/' . $template . '.php';

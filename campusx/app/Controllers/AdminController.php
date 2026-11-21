@@ -179,7 +179,13 @@ final class AdminController extends Controller
         $repo = new SupportRepository();
         $ticket = $repo->findTicket($id);
         if (!$ticket) abort(404, 'Ticket not found');
-        $this->view('admin/ticket_detail', ['title' => 'Ticket #' . $id, 'ticket' => $ticket, 'messages' => $repo->ticketMessages($id)]);
+
+        $this->view('admin/ticket_detail', [
+            'title' => 'Ticket #' . $id,
+            'ticket' => $ticket,
+            'messages' => $repo->ticketMessages($id),
+            'activity' => $repo->ticketActivity($id),
+        ]);
     }
 
     public function replyTicket(int $id): void
@@ -195,12 +201,65 @@ final class AdminController extends Controller
             redirect('/admin/tickets/' . $id);
         }
         $repo->reply($id, Auth::id(), $body);
-        $status = $this->input('status');
-        if (in_array($status, ['open', 'in_review', 'waiting_for_user', 'resolved', 'closed'], true)) {
-            $repo->setTicketStatus($id, $status);
-        }
+        $repo->addTicketActivity($id, (int) Auth::id(), 'ticket_replied', null, 'Admin reply added');
         Audit::log('ticket_replied', 'ticket', $id);
         flash('success', 'Reply sent.');
+        redirect('/admin/tickets/' . $id);
+    }
+
+    public function updateTicketStatus(int $id): void
+    {
+        Auth::requireAdmin();
+        $this->requireCsrf();
+
+        $repo = new SupportRepository();
+        $ticket = $repo->findTicket($id);
+        if (!$ticket) abort(404, 'Ticket not found');
+
+        $status = $this->input('status');
+        $allowed = ['open', 'in_review', 'waiting_for_user', 'resolved', 'closed'];
+
+        if (!in_array($status, $allowed, true)) {
+            abort(400, 'Invalid ticket status');
+        }
+
+        $oldStatus = (string) $ticket['status'];
+
+        if ($oldStatus !== $status) {
+            $repo->setTicketStatus($id, $status);
+            $repo->addTicketActivity($id, (int) Auth::id(), 'status_changed', $oldStatus, $status);
+            Audit::log('ticket_status_changed', 'ticket', $id, $oldStatus . ' -> ' . $status);
+        }
+
+        flash('success', 'Ticket status updated.');
+        redirect('/admin/tickets/' . $id);
+    }
+
+    public function updateTicketPriority(int $id): void
+    {
+        Auth::requireAdmin();
+        $this->requireCsrf();
+
+        $repo = new SupportRepository();
+        $ticket = $repo->findTicket($id);
+        if (!$ticket) abort(404, 'Ticket not found');
+
+        $priority = $this->input('priority');
+        $allowed = ['low', 'normal', 'high', 'urgent'];
+
+        if (!in_array($priority, $allowed, true)) {
+            abort(400, 'Invalid ticket priority');
+        }
+
+        $oldPriority = (string) $ticket['priority'];
+
+        if ($oldPriority !== $priority) {
+            $repo->setTicketPriority($id, $priority);
+            $repo->addTicketActivity($id, (int) Auth::id(), 'priority_changed', $oldPriority, $priority);
+            Audit::log('ticket_priority_changed', 'ticket', $id, $oldPriority . ' -> ' . $priority);
+        }
+
+        flash('success', 'Ticket priority updated.');
         redirect('/admin/tickets/' . $id);
     }
 

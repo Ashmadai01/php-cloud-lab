@@ -23,6 +23,12 @@
     Messages
     <span class="badge-count" data-unread-badge hidden>0</span>
 </a>
+        <a href="<?= url('/notifications') ?>" aria-label="Notifications">
+          Notifications
+          <?php if (($notificationUnreadCount ?? 0) > 0): ?>
+            <span class="badge-count"><?= (int) $notificationUnreadCount ?></span>
+          <?php endif; ?>
+        </a>
         <a href="<?= url('/favorites') ?>">Favorites</a>
         <a href="<?= url('/my-listings') ?>">My Listings</a>
         <a href="<?= url('/profile') ?>">Profile</a>

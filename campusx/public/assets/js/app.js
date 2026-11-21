@@ -327,6 +327,117 @@ if (presenceEl && data.presence) {
     setTimeout(poll, delay);
   }
 
+
+  // Support ticket replies (AJAX — no page reload)
+  var ticketForm = document.querySelector('[data-ticket-reply-form]');
+  var ticketMessages = document.querySelector('[data-ticket-messages]');
+
+  if (ticketForm && ticketMessages) {
+    ticketForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      var bodyInput = ticketForm.querySelector('[name="body"]');
+      var submitButton = ticketForm.querySelector('button[type="submit"]');
+
+      if (!bodyInput || !bodyInput.value.trim()) return;
+
+      var status = ticketForm.querySelector('[data-ticket-send-status]');
+
+      if (!status) {
+        status = document.createElement('div');
+        status.setAttribute('data-ticket-send-status', '');
+        status.setAttribute('role', 'status');
+        status.style.flexBasis = '100%';
+        ticketForm.appendChild(status);
+      }
+
+      status.textContent = 'Sending...';
+      status.classList.remove('send-failed');
+
+      if (submitButton) submitButton.disabled = true;
+
+      fetch(ticketForm.action, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: new FormData(ticketForm),
+        credentials: 'same-origin'
+      })
+      .then(function (response) {
+        return response.json().then(function (data) {
+          if (!response.ok || !data.ok) {
+            throw new Error(data.error || 'Reply could not be sent.');
+          }
+          return data;
+        });
+      })
+      .then(function (data) {
+        var m = data.message;
+
+        if (!m) throw new Error('The server did not return the sent message.');
+
+        var div = document.createElement('div');
+        div.className = 'msg mine';
+
+        var messageBody = document.createElement('div');
+        messageBody.style.whiteSpace = 'pre-wrap';
+        messageBody.textContent = m.body || '';
+        div.appendChild(messageBody);
+
+        (m.attachments || []).forEach(function (attachmentId) {
+          var attachmentUrl = '/support/attachments/' + Number(attachmentId);
+
+          var link = document.createElement('a');
+          link.href = attachmentUrl;
+          link.target = '_blank';
+          link.rel = 'noopener';
+
+          var img = document.createElement('img');
+          img.src = attachmentUrl;
+          img.alt = 'Attachment';
+          img.loading = 'lazy';
+          img.style.maxWidth = '160px';
+          img.style.maxHeight = '120px';
+          img.style.borderRadius = '8px';
+          img.style.marginTop = '6px';
+          img.style.objectFit = 'cover';
+
+          link.appendChild(img);
+          div.appendChild(link);
+        });
+
+        var meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.textContent = (m.author_name || 'You') + ' · ' + (m.created_at || '');
+        div.appendChild(meta);
+
+        ticketMessages.appendChild(div);
+        ticketMessages.scrollTop = ticketMessages.scrollHeight;
+
+        bodyInput.value = '';
+
+        var fileInput = ticketForm.querySelector('input[type="file"]');
+        if (fileInput) fileInput.value = '';
+
+        status.textContent = 'Reply sent.';
+
+        if (data.attachmentErrors && data.attachmentErrors.length) {
+          showToast('Some attachments were not saved: ' + data.attachmentErrors.join(' '), 'error');
+        }
+      })
+      .catch(function (error) {
+        status.textContent = 'Failed: ' + error.message;
+        status.classList.add('send-failed');
+      })
+      .finally(function () {
+        if (submitButton) submitButton.disabled = false;
+        bodyInput.focus();
+      });
+    });
+  }
+
   // Client-side file size hint (server enforces limits)
   document.querySelectorAll('input[type="file"]').forEach(function (input) {
     input.addEventListener('change', function () {

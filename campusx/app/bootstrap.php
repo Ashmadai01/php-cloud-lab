@@ -10,6 +10,7 @@ use SdutSwap\Controllers\BlockController;
 use SdutSwap\Controllers\ChatController;
 use SdutSwap\Controllers\HomeController;
 use SdutSwap\Controllers\ListingController;
+use SdutSwap\Controllers\NotificationController;
 use SdutSwap\Controllers\ProfileController;
 use SdutSwap\Controllers\SupportController;
 use SdutSwap\Controllers\UploadController;
@@ -54,6 +55,7 @@ $router = new Router();
 $home = new HomeController();
 $auth = new AuthController();
 $listings = new ListingController();
+$notifications = new NotificationController();
 $profile = new ProfileController();
 $verify = new VerificationController();
 $chat = new ChatController();
@@ -123,6 +125,12 @@ $router->post('/messages/{id}/send', fn($id) => $chat->send((int) $id), [$mAuth,
 $router->post('/messages/{id}/typing', fn($id) => $chat->typing((int) $id), [$mAuth, $mCsrf]);
 $router->get('/messages/{id}/poll', fn($id) => $chat->poll((int) $id), [$mAuth]);
 
+// Notifications
+$router->get('/notifications', fn() => $notifications->index(), [$mAuth]);
+$router->get('/notifications/{id}/open', fn($id) => $notifications->open((int) $id), [$mAuth]);
+$router->post('/notifications/{id}/read', fn($id) => $notifications->markRead((int) $id), [$mAuth, $mCsrf]);
+$router->post('/notifications/read-all', fn() => $notifications->markAllRead(), [$mAuth, $mCsrf]);
+
 // Support
 $router->get('/support', fn() => $support->faq());
 $router->get('/support/my', fn() => $support->myTickets(), [$mAuth]);
@@ -149,6 +157,8 @@ $router->get('/admin/verifications/{id}/card', fn($id) => $admin->viewCard((int)
 $router->get('/admin/tickets', fn() => $admin->tickets(), [$mAdmin]);
 $router->get('/admin/tickets/{id}', fn($id) => $admin->ticketDetail((int) $id), [$mAdmin]);
 $router->post('/admin/tickets/{id}/reply', fn($id) => $admin->replyTicket((int) $id), [$mAdmin, $mCsrf]);
+$router->post('/admin/tickets/{id}/status', fn($id) => $admin->updateTicketStatus((int) $id), [$mAdmin, $mCsrf]);
+$router->post('/admin/tickets/{id}/priority', fn($id) => $admin->updateTicketPriority((int) $id), [$mAdmin, $mCsrf]);
 $router->get('/admin/reports', fn() => $admin->reports(), [$mAdmin]);
 $router->get('/admin/reports/{id}', fn($id) => $admin->reportDetail((int) $id), [$mAdmin]);
 $router->get('/admin/reports/{id}/evidence/{eid}', fn($id, $eid) => $admin->evidence((int) $id, (int) $eid), [$mAdmin]);
