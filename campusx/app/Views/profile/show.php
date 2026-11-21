@@ -3,6 +3,14 @@
   <div class="split">
     <div class="form-card" style="margin:0">
       <h3>Profile details</h3>
+      <div class="profile-avatar-preview" style="display:flex;align-items:center;gap:15px;margin:15px 0 20px">
+        <?php if (!empty($profile['avatar_path'])): ?>
+          <img src="<?= e(\SdutSwap\Core\Upload::publicPath((string) $profile['avatar_path'])) ?>" alt="Profile picture" style="width:100px;height:100px;object-fit:cover;border-radius:50%">
+        <?php else: ?>
+          <div style="width:100px;height:100px;border-radius:50%;background:var(--surface-2,#eee);display:flex;align-items:center;justify-content:center">No photo</div>
+        <?php endif; ?>
+        <span class="muted small">Your public profile picture</span>
+      </div>
       <?php if (!empty($errors)): foreach ($errors as $field => $msgs): foreach ($msgs as $m): ?><div class="alert alert-error"><?= e($m) ?></div><?php endforeach; endforeach; endif; ?>
       <form method="post" action="<?= url('/profile') ?>" enctype="multipart/form-data">
         <?= csrfField() ?>

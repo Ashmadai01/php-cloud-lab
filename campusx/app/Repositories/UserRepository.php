@@ -18,6 +18,20 @@ final class UserRepository
         return $r ?: null;
     }
 
+    public function findPublicProfile(int $id): ?array
+    {
+        $s = $this->db->prepare(
+            'SELECT id, name, university, bio, avatar_path, is_verified, created_at
+             FROM users
+             WHERE id = ? AND suspended_at IS NULL
+             LIMIT 1'
+        );
+        $s->execute([$id]);
+        $r = $s->fetch();
+
+        return $r ?: null;
+    }
+
     public function findByEmail(string $email): ?array
     {
         $s = $this->db->prepare('SELECT * FROM users WHERE email = ? LIMIT 1');

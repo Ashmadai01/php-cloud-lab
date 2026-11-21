@@ -95,6 +95,7 @@ $router->get('/verify-email', fn() => $auth->verifyEmail());
 $router->post('/resend-verification', fn() => $auth->resendVerification(), [$mCsrf]);
 
 // Account
+$router->get('/users/{id}', fn($id) => $profile->publicProfile((int) $id));
 $router->get('/profile', fn() => $profile->show(), [$mAuth]);
 $router->post('/profile', fn() => $profile->update(), [$mAuth, $mCsrf]);
 $router->post('/profile/password', fn() => $profile->changePassword(), [$mAuth, $mCsrf]);

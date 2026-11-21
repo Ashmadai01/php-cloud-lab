@@ -33,6 +33,20 @@ final class ProfileController extends Controller
         $this->renderProfile();
     }
 
+    public function publicProfile(int $id): void
+    {
+        $profile = (new UserRepository())->findPublicProfile($id);
+
+        if (!$profile) {
+            abort(404, 'Profile not found');
+        }
+
+        $this->view('profile/public', [
+            'title' => $profile['name'] . ' - Profile',
+            'profile' => $profile,
+        ]);
+    }
+
     public function update(): void
     {
         Auth::requireLogin();
