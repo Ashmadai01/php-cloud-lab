@@ -1,8 +1,21 @@
 
 <div class="container marketplace-page">
+  <div class="marketplace-hero">
+    <div class="marketplace-hero-overlay"></div>
+    <div class="marketplace-hero-content">
+      <span class="marketplace-eyebrow">SDUT STUDENT COMMUNITY</span>
+      <h1>Campus Marketplace</h1>
+      <p>Discover, buy and sell within your campus community.</p>
+      <div class="marketplace-hero-stats">
+        <strong><?= (int) ($total ?? 0) ?></strong>
+        <span>Active listings</span>
+      </div>
+    </div>
+  </div>
+
   <div class="marketplace-header">
     <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href=" '/') ?>">Home</a > / Marketplace
+      <a href="<?= url('/') ?>">Home</a> / Marketplace
     </nav>
 
     <div class="marketplace-heading">
