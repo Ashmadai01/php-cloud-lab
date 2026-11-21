@@ -193,3 +193,210 @@ tr:last-child td{border-bottom:0}
 }
 .badge-not_submitted{background:var(--surface-2);color:var(--muted)}
 .plain-list{list-style:none;margin:0;padding:0}
+
+/* =========================================
+   SDUT UNIVERSITY IDENTITY - HOMEPAGE
+========================================= */
+
+:root {
+  --gold: #d6ad55;
+  --gold-light: #f5e8c8;
+}
+
+/* Homepage hero */
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 76px 0 66px;
+  background:
+    radial-gradient(circle at 85% 20%, rgba(214,173,85,.16), transparent 28%),
+    linear-gradient(120deg, #091b3b 0%, #12366b 65%, #1b477e 100%);
+}
+
+.hero h1 {
+  max-width: 760px;
+  font-size: clamp(2.2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  letter-spacing: -1.2px;
+}
+
+.hero p {
+  max-width: 680px;
+  line-height: 1.8;
+  color: #dce7f8;
+}
+
+.hero .search-bar {
+  max-width: 700px;
+  padding: 7px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 12px 35px rgba(0,0,0,.2);
+}
+
+.hero .search-bar input {
+  min-width: 0;
+  color: #16213a;
+  outline: none;
+}
+
+.hero .search-bar .btn {
+  background: var(--gold);
+  color: #142747;
+  border-radius: 10px;
+}
+
+.hero .search-bar .btn:hover {
+  background: #e7c575;
+}
+
+.hero-stats {
+  gap: 38px;
+  margin-top: 34px;
+}
+
+.hero-stats strong {
+  color: var(--gold-light);
+  font-size: 1.35rem;
+}
+
+/* Homepage section headings */
+.section h2 {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+.section .sub {
+  line-height: 1.7;
+}
+
+/* Category buttons */
+.section .flex .btn-outline {
+  border-color: #e2d3ad;
+  background: #fff;
+  color: var(--navy);
+  border-radius: 999px;
+  padding: 11px 20px;
+  transition: .2s ease;
+}
+
+.section .flex .btn-outline:hover {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* Product cards */
+.grid {
+  gap: 22px;
+}
+
+.card {
+  border-radius: 16px;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card-img {
+  aspect-ratio: 4 / 3;
+}
+
+.card-body {
+  padding: 17px;
+}
+
+.card-title {
+  font-size: 1.03rem;
+}
+
+.card-price {
+  color: #a77b25;
+  font-size: 1.2rem;
+}
+
+/* Trust and safety */
+.trust-card {
+  border-radius: 16px;
+  padding: 24px;
+  transition: transform .2s ease, border-color .2s ease;
+}
+
+.trust-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--gold);
+}
+
+.trust-card .icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--gold-light);
+  margin-bottom: 14px;
+}
+
+.trust-card h3 {
+  color: var(--navy);
+  margin: 0 0 8px;
+}
+
+/* Call to action */
+.cta {
+  background:
+    radial-gradient(circle at 90% 10%, rgba(214,173,85,.18), transparent 30%),
+    linear-gradient(120deg, #091b3b, #1b477e);
+  border: 1px solid rgba(214,173,85,.35);
+  border-radius: 20px;
+  padding: 48px 28px;
+}
+
+.cta .btn-primary {
+  background: var(--gold);
+  color: #142747;
+}
+
+.cta .btn-primary:hover {
+  background: #e7c575;
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+  .hero {
+    padding: 52px 0 44px;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero-stats {
+    gap: 18px;
+  }
+
+  .hero-stats > div {
+    min-width: 40%;
+  }
+
+  .section {
+    padding: 28px 0;
+  }
+
+  .cta {
+    padding: 32px 20px;
+  }
+}
+.hero-label {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--gold);
+  font-size: .8rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
