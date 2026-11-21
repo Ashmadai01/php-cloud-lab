@@ -141,6 +141,17 @@ fetch('/messages/' + convId + '/poll?after=' + lastId, {
     delay = Math.min(delay * 1.5, 15000);
     return;
   }
+  var presenceEl = document.getElementById('presence-status');
+
+if (presenceEl && data.presence) {
+  if (data.presence.online) {
+    presenceEl.innerHTML = '<span style="color:#16a34a">● Online</span>';
+  } else if (data.presence.last_seen) {
+    presenceEl.textContent = 'Last seen ' + data.presence.last_seen;
+  } else {
+    presenceEl.textContent = 'Offline';
+  }
+}
 
   (data.statuses || []).forEach(function (status) {
     var statusEl = box.querySelector(

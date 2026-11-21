@@ -2,6 +2,23 @@
   <div class="page-head">
     <nav class="breadcrumb"><a href="<?= url('/messages') ?>">Messages</a> / Conversation</nav>
     <h1><?= e($conversation['listing_title'] ?? 'Conversation') ?></h1>
+    <?php foreach ($participants as $participant): ?>
+  <?php if ((int) $participant['id'] === (int) $otherUserId): ?>
+    <p class="muted small">
+  <strong><?= e($participant['name']) ?></strong>
+  ·
+  <span id="presence-status">
+    <?php if (!empty($otherPresence['online'])): ?>
+      <span style="color:#16a34a">● Online</span>
+    <?php elseif (!empty($otherPresence['last_seen'])): ?>
+      Last seen <?= e(timeAgo($otherPresence['last_seen'])) ?>
+    <?php else: ?>
+      Offline
+    <?php endif; ?>
+  </span>
+</p >
+  <?php endif; ?>
+<?php endforeach; ?>
     <?php if (!empty($conversation['listing_id'])): ?>
       <p class="muted small">About: <a href="<?= url('/listings/' . (int) $conversation['listing_id']) ?>"><?= e($conversation['listing_title']) ?></a> · <?= e(formatMoney($conversation['listing_price'] ?? 0)) ?></p>
     <?php endif; ?>

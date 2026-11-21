@@ -47,7 +47,34 @@ final class ChatRepository
         $id = $s->fetchColumn();
         return $id === false ? null : (int) $id;
     }
+    public function presence(int $userId): array
+{
+    $s = $this->db->prepare(
+        'SELECT MAX(last_seen_at) AS last_seen
+         FROM user_sessions
+         WHERE user_id = ?
+           AND revoked_at IS NULL
+           AND expires_at > UTC_TIMESTAMP()'
+    );
 
+    $s->execute([$userId]);
+    $lastSeen = $s->fetchColumn();
+
+    if (!$lastSeen) {
+        return [
+            'online' => false,
+            'last_seen' => null,
+        ];
+    }
+
+    $seenTime = strtotime($lastSeen . ' UTC');
+    $online = $seenTime !== false && (time() - $seenTime) <= 120;
+
+    return [
+        'online' => $online,
+        'last_seen' => $lastSeen,
+    ];
+}
     public function findMessage(int $messageId): ?array
     {
         $s = $this->db->prepare('SELECT id, conversation_id, sender_id FROM messages WHERE id = ? LIMIT 1');

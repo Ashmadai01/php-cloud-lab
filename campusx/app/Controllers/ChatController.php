@@ -54,6 +54,9 @@ final class ChatController extends Controller
         $repo->markRead($id, Auth::id());
         $conv = $repo->conversation($id);
         $other = $repo->otherParticipantId($id, Auth::id());
+        $otherPresence = $other !== null
+    ? $repo->presence($other)
+    : ['online' => false, 'last_seen' => null];
         $blocks = new BlockRepository();
         $this->view('chat/thread', [
             'title' => 'Conversation',
@@ -61,6 +64,7 @@ final class ChatController extends Controller
             'participants' => $repo->participants($id),
             'messages' => $repo->messages($id),
             'otherUserId' => $other,
+            'otherPresence' => $otherPresence,
             'iBlocked' => $other !== null && $blocks->hasBlocked(Auth::id(), $other),
             'messagingBlocked' => $other !== null && $blocks->isBlockedEitherWay(Auth::id(), $other),
         ]);
@@ -119,9 +123,14 @@ public function poll(int $id): void
         'is_read' => (bool) $m['is_read'],
     ], $msgs);
 
-    $this->json([
+    $other = $repo->otherParticipantId($id, $userId);
+
+$this->json([
     'messages' => $out,
     'statuses' => $repo->readStatuses($id, $userId),
+    'presence' => $other !== null
+        ? $repo->presence($other)
+        : ['online' => false, 'last_seen' => null],
 ]);
 }
 
