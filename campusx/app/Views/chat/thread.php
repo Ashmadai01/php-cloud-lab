@@ -11,7 +11,17 @@
       <?php foreach ($messages as $m): ?>
         <div class="msg <?= (int) $m['sender_id'] === (int) ($user['id'] ?? 0) ? 'mine' : 'theirs' ?>" data-msg-id="<?= (int) $m['id'] ?>">
           <div><?= nl2br(e($m['body'])) ?></div>
-          <div class="meta"><?= e($m['sender_name']) ?> · <?= e(displayDate($m['created_at'])) ?><?php if ((int) $m['sender_id'] !== (int) ($user['id'] ?? 0)): ?> · <a href="<?= url('/report/message/' . (int) $m['id']) ?>">Report</a><?php endif; ?></div>
+          <div class="meta">
+  <?= e($m['sender_name']) ?> · <?= e(displayDate($m['created_at'])) ?>
+
+  <?php if ((int) $m['sender_id'] === (int) ($user['id'] ?? 0)): ?>
+    · <span class="read-status" data-read-status="<?= (int) $m['id'] ?>">
+      <?= !empty($m['is_read']) ? 'Read' : 'Sent' ?>
+    </span>
+  <?php else: ?>
+    · <a href=" '/report/message/' . (int) $m['id']) ?>">Report</a >
+  <?php endif; ?>
+</div>
         </div>
       <?php endforeach; ?>
     <?php else: ?>

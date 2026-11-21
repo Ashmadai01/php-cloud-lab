@@ -121,22 +121,71 @@ public function notificationStatus(int $userId): array
         'latest' => $latest,
     ];
 }
-    public function messages(int $convId, ?int $afterId = null, int $limit = 100): array
-    {
-        if ($afterId !== null) {
-            $s = $this->db->prepare('SELECT m.*, u.name AS sender_name FROM messages m JOIN users u ON u.id = m.sender_id WHERE m.conversation_id = ? AND m.id > ? ORDER BY m.id ASC LIMIT ?');
-            $s->bindValue(1, $convId, PDO::PARAM_INT);
-            $s->bindValue(2, $afterId, PDO::PARAM_INT);
-            $s->bindValue(3, $limit, PDO::PARAM_INT);
-            $s->execute();
-        } else {
-            $s = $this->db->prepare('SELECT m.*, u.name AS sender_name FROM messages m JOIN users u ON u.id = m.sender_id WHERE m.conversation_id = ? ORDER BY m.id ASC LIMIT ?');
-            $s->bindValue(1, $convId, PDO::PARAM_INT);
-            $s->bindValue(2, $limit, PDO::PARAM_INT);
-            $s->execute();
-        }
-        return $s->fetchAll();
+
+public function messages(int $convId, ?int $afterId = null, int $limit = 100): array
+{
+    $sql = 'SELECT m.*, u.name AS sender_name,
+            CASE
+                WHEN reader.last_read_at IS NOT NULL
+                 AND reader.last_read_at >= m.created_at
+                THEN 1 ELSE 0
+            END AS is_read
+            FROM messages m
+            JOIN users u ON u.id = m.sender_id
+            LEFT JOIN conversation_participants reader
+                ON reader.conversation_id = m.conversation_id
+                AND reader.user_id != m.sender_id
+            WHERE m.conversation_id = ?';
+
+    if ($afterId !== null) {
+        $sql .= ' AND m.id > ?';
     }
+
+    $sql .= ' ORDER BY m.id ASC LIMIT ?';
+
+    $s = $this->db->prepare($sql);
+    $s->bindValue(1, $convId, PDO::PARAM_INT);
+
+    if ($afterId !== null) {
+        $s->bindValue(2, $afterId, PDO::PARAM_INT);
+        $s->bindValue(3, $limit, PDO::PARAM_INT);
+    } else {
+        $s->bindValue(2, $limit, PDO::PARAM_INT);
+    }
+
+    $s->execute();
+    return $s->fetchAll();
+}
+
+public function readStatuses(int $convId, int $senderId): array
+{
+    $s = $this->db->prepare(
+        'SELECT m.id,
+                CASE
+                    WHEN reader.last_read_at IS NOT NULL
+                     AND reader.last_read_at >= m.created_at
+                    THEN 1 ELSE 0
+                END AS is_read
+         FROM messages m
+         LEFT JOIN conversation_participants reader
+            ON reader.conversation_id = m.conversation_id
+            AND reader.user_id != m.sender_id
+         WHERE m.conversation_id = ?
+           AND m.sender_id = ?
+         ORDER BY m.id DESC
+         LIMIT 100'
+    );
+
+    $s->execute([$convId, $senderId]);
+
+    return array_map(function ($row) {
+        return [
+            'id' => (int) $row['id'],
+            'is_read' => (bool) $row['is_read'],
+        ];
+    }, $s->fetchAll());
+}
+
 
     public function send(int $convId, int $senderId, string $body): int
     {

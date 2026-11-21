@@ -130,30 +130,70 @@
     if (msgs.length) lastId = parseInt(msgs[msgs.length - 1].getAttribute('data-msg-id') || '0', 10);
     var delay = 4000;
     function poll() {
-      fetch('/messages/' + convId + '/poll?after=' + lastId, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrf },
-        credentials: 'same-origin'
-      }).then(function (r) { return r.ok ? r.json() : null; }).then(function (data) {
-        if (!data || !data.messages || !data.messages.length) { delay = Math.min(delay * 1.5, 15000); return; }
-        delay = 4000;
-        data.messages.forEach(function (m) {
-          lastId = Math.max(lastId, m.id);
-          var div = document.createElement('div');
-          div.className = 'msg ' + (String(m.sender_id) === String(thread.getAttribute('data-me')) ? 'mine' : 'theirs');
-          div.setAttribute('data-msg-id', String(m.id));
-          var body = document.createElement('div');
-          body.textContent = m.body;
-          var meta = document.createElement('div');
-          meta.className = 'meta';
-          meta.textContent = m.sender_name + ' · ' + m.created_at;
-          div.appendChild(body);
-          div.appendChild(meta);
-          box.appendChild(div);
-        });
-        box.scrollTop = box.scrollHeight;
-      }).catch(function () { delay = Math.min(delay * 2, 30000); }).finally(function () {
-        setTimeout(poll, delay);
-      });
+
+fetch('/messages/' + convId + '/poll?after=' + lastId, {
+  headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrf },
+  credentials: 'same-origin'
+}).then(function (r) {
+  return r.ok ? r.json() : null;
+}).then(function (data) {
+  if (!data) {
+    delay = Math.min(delay * 1.5, 15000);
+    return;
+  }
+
+  (data.statuses || []).forEach(function (status) {
+    var statusEl = box.querySelector(
+      '[data-read-status="' + status.id + '"]'
+    );
+
+    if (statusEl) {
+      statusEl.textContent = status.is_read ? 'Read' : 'Sent';
+    }
+  });
+
+  (data.messages || []).forEach(function (m) {
+    lastId = Math.max(lastId, Number(m.id));
+
+    var isMine = String(m.sender_id) === String(thread.getAttribute('data-me'));
+
+    var div = document.createElement('div');
+    div.className = 'msg ' + (isMine ? 'mine' : 'theirs');
+    div.setAttribute('data-msg-id', String(m.id));
+
+    var body = document.createElement('div');
+    body.textContent = m.body;
+
+    var meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = m.sender_name + ' · ' + m.created_at;
+
+    if (isMine) {
+      var statusEl = document.createElement('span');
+      statusEl.className = 'read-status';
+      statusEl.setAttribute('data-read-status', String(m.id));
+      statusEl.textContent = m.is_read ? 'Read' : 'Sent';
+
+      meta.appendChild(document.createTextNode(' · '));
+      meta.appendChild(statusEl);
+    }
+
+    div.appendChild(body);
+    div.appendChild(meta);
+    box.appendChild(div);
+  });
+
+  delay = 4000;
+
+  if ((data.messages || []).length) {
+    box.scrollTop = box.scrollHeight;
+  }
+}).catch(function () {
+  delay = Math.min(delay * 2, 30000);
+}).finally(function () {
+  setTimeout(poll, delay);
+});
+
     }
     setTimeout(poll, delay);
   }

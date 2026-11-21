@@ -91,22 +91,40 @@ final class ChatController extends Controller
         redirect('/messages/' . $id);
     }
 
-    public function poll(int $id): void
-    {
-        Auth::requireLogin();
-        $repo = new ChatRepository();
-        if (!$repo->isParticipant($id, Auth::id())) $this->json(['error' => 'Forbidden'], 403);
-        $after = (int) ($this->input('after', '0'));
-        $msgs = $repo->messages($id, $after > 0 ? $after : null, 50);
-        $out = array_map(fn($m) => [
-            'id' => (int) $m['id'],
-            'sender_id' => (int) $m['sender_id'],
-            'sender_name' => $m['sender_name'],
-            'body' => $m['body'],
-            'created_at' => $m['created_at'],
-        ], $msgs);
-        $this->json(['messages' => $out]);
+
+public function poll(int $id): void
+{
+    Auth::requireLogin();
+
+    $repo = new ChatRepository();
+    $userId = Auth::id();
+
+    if (!$repo->isParticipant($id, $userId)) {
+        $this->json(['error' => 'Forbidden'], 403);
+        return;
     }
+
+    // Mark messages in this conversation as read by the current user.
+    $repo->markRead($id, $userId);
+
+    $after = (int) $this->input('after', '0');
+    $msgs = $repo->messages($id, $after > 0 ? $after : null, 50);
+
+    $out = array_map(fn($m) => [
+        'id' => (int) $m['id'],
+        'sender_id' => (int) $m['sender_id'],
+        'sender_name' => $m['sender_name'],
+        'body' => $m['body'],
+        'created_at' => $m['created_at'],
+        'is_read' => (bool) $m['is_read'],
+    ], $msgs);
+
+    $this->json([
+    'messages' => $out,
+    'statuses' => $repo->readStatuses($id, $userId),
+]);
+}
+
     public function unreadStatus(): void
 {
     Auth::requireLogin();
