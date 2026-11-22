@@ -54,6 +54,85 @@
     </a >
   <?php endif; ?>
 
+  <?php
+    $transaction = $currentTransaction ?? null;
+    $currentUserId = (int) ($user['id'] ?? 0);
+    $isBuyer = $transaction && (int) $transaction['buyer_id'] === $currentUserId;
+    $isSeller = $transaction && (int) $transaction['seller_id'] === $currentUserId;
+  ?>
+
+  <section class="transaction-panel">
+    <h3>Purchase & Transaction</h3>
+
+    <?php if (!$transaction): ?>
+      <p>No purchase request has been made for this listing.</p>
+
+      <?php if (!empty($conversation['listing_id']) && !$messagingBlocked): ?>
+        <form method="post" action="<?= url('/messages/' . (int) $conversation['id'] . '/purchase-request') ?>">
+          <?= csrfField() ?>
+          <button class="btn btn-primary" type="submit">Request to Buy</button>
+        </form>
+      <?php endif; ?>
+
+    <?php else: ?>
+      <p>Status: <strong><?= e(ucfirst($transaction['status'])) ?></strong></p>
+
+      <?php if ($transaction['status'] === 'pending' && $isSeller): ?>
+        <div class="transaction-actions">
+          <form method="post" action="<?= url('/transactions/' . (int) $transaction['id'] . '/decision') ?>">
+            <?= csrfField() ?>
+            <input type="hidden" name="decision" value="accept">
+            <button class="btn btn-primary" type="submit">Accept Request</button>
+          </form>
+
+          <form method="post" action="<?= url('/transactions/' . (int) $transaction['id'] . '/decision') ?>">
+            <?= csrfField() ?>
+            <input type="hidden" name="decision" value="reject">
+            <button class="btn btn-danger" type="submit">Reject Request</button>
+          </form>
+        </div>
+      <?php endif; ?>
+
+      <?php if ($transaction['status'] === 'accepted' && $isBuyer): ?>
+        <form method="post" action="<?= url('/transactions/' . (int) $transaction['id'] . '/confirm') ?>">
+          <?= csrfField() ?>
+          <button class="btn btn-primary" type="submit"
+                  data-confirm="Confirm that you have received this item?">
+            Confirm Receipt
+          </button>
+        </form>
+      <?php endif; ?>
+
+      <?php if ($transaction['status'] === 'completed' && $isBuyer && empty($transaction['review_id'])): ?>
+        <form method="post" action="<?= url('/transactions/' . (int) $transaction['id'] . '/review') ?>">
+          <?= csrfField() ?>
+          <label for="transaction-rating">Your rating</label>
+          <select id="transaction-rating" name="rating" required>
+            <option value="">Choose a rating</option>
+            <option value="5">★★★★★ - Excellent</option>
+            <option value="4">★★★★ - Very good</option>
+            <option value="3">★★★ - Good</option>
+            <option value="2">★★ - Fair</option>
+            <option value="1">★ - Poor</option>
+          </select>
+
+          <label for="transaction-comment">Comment (optional)</label>
+          <textarea id="transaction-comment" name="comment" maxlength="1000"
+                    placeholder="Share your experience..."></textarea>
+
+          <button class="btn btn-primary" type="submit">Submit Review</button>
+        </form>
+      <?php endif; ?>
+
+      <?php if (!empty($transaction['review_id'])): ?>
+        <p>Review submitted: <strong><?= (int) $transaction['review_rating'] ?>/5</strong></p>
+        <?php if (!empty($transaction['review_comment'])): ?>
+          <p><?= nl2br(e($transaction['review_comment'])) ?></p>
+        <?php endif; ?>
+      <?php endif; ?>
+    <?php endif; ?>
+  </section>
+
   <div class="chat-window">
     <div class="messages chat-messages"
          data-chat-thread="<?= (int) $conversation['id'] ?>"

@@ -53,6 +53,8 @@ final class ChatController extends Controller
         }
         $repo->markRead($id, Auth::id());
         $conv = $repo->conversation($id);
+        $transactionRepo = new \SdutSwap\Repositories\TransactionRepository();
+        $currentTransaction = $transactionRepo->latestForConversation($id, Auth::id());
         $other = $repo->otherParticipantId($id, Auth::id());
         $otherPresence = $other !== null
     ? $repo->presence($other)
@@ -61,6 +63,7 @@ final class ChatController extends Controller
         $this->view('chat/thread', [
             'title' => 'Conversation',
             'conversation' => $conv,
+            'currentTransaction' => $currentTransaction,
             'participants' => $repo->participants($id),
             'messages' => $repo->messages($id),
             'otherUserId' => $other,

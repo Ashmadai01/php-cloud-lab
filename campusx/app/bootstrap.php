@@ -13,6 +13,7 @@ use SdutSwap\Controllers\ListingController;
 use SdutSwap\Controllers\NotificationController;
 use SdutSwap\Controllers\ProfileController;
 use SdutSwap\Controllers\SupportController;
+use SdutSwap\Controllers\TransactionController;
 use SdutSwap\Controllers\UploadController;
 use SdutSwap\Controllers\VerificationController;
 use SdutSwap\Middleware\RequireAdmin;
@@ -59,6 +60,7 @@ $notifications = new NotificationController();
 $profile = new ProfileController();
 $verify = new VerificationController();
 $chat = new ChatController();
+$transactions = new TransactionController();
 $support = new SupportController();
 $admin = new AdminController();
 $uploads = new UploadController();
@@ -118,6 +120,11 @@ $router->get('/favorites', fn() => $listings->favorites(), [$mAuth]);
 $router->post('/listings/{lid}/images/{iid}/delete', fn($lid, $iid) => $listings->deleteImage((int) $lid, (int) $iid), [$mAuth, $mCsrf]);
 
 // Chat
+
+$router->post('/messages/{id}/purchase-request', fn($id) => $transactions->request((int) $id), [$mAuth, $mCsrf]);
+$router->post('/transactions/{id}/decision', fn($id) => $transactions->decide((int) $id), [$mAuth, $mCsrf]);
+$router->post('/transactions/{id}/confirm', fn($id) => $transactions->confirm((int) $id), [$mAuth, $mCsrf]);
+$router->post('/transactions/{id}/review', fn($id) => $transactions->review((int) $id), [$mAuth, $mCsrf]);
 $router->get('/messages', fn() => $chat->inbox(), [$mAuth]);
 $router->post('/listings/{id}/message', fn($id) => $chat->start((int) $id), [$mAuth, $mCsrf]);
 $router->get('/messages/unread', fn() => $chat->unreadStatus(), [$mAuth]);

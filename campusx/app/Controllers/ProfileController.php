@@ -46,11 +46,17 @@ final class ProfileController extends Controller
         $stats = $listingRepository->publicStatsForSeller($id);
         $listings = $listingRepository->publicActiveBySeller($id, 6);
 
+        $transactionRepository = new \SdutSwap\Repositories\TransactionRepository();
+        $sellerRating = $transactionRepository->sellerRating($id);
+        $sellerReviews = $transactionRepository->reviewsForSeller($id, 10);
+
         $this->view('profile/public', [
             'title' => $profile['name'] . ' - Profile',
             'profile' => $profile,
             'stats' => $stats,
             'listings' => $listings,
+            'sellerRating' => $sellerRating,
+            'sellerReviews' => $sellerReviews,
         ]);
     }
 

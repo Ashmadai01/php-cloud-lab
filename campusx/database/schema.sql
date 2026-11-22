@@ -286,3 +286,42 @@ INSERT INTO categories (name, slug, sort_order) VALUES
 ('Services & Tutoring','services',7),
 ('Other','other',8)
 ON DUPLICATE KEY UPDATE name=VALUES(name);
+
+-- Marketplace transactions
+CREATE TABLE IF NOT EXISTS transactions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  listing_id BIGINT UNSIGNED NULL,
+  conversation_id BIGINT UNSIGNED NULL,
+  buyer_id BIGINT UNSIGNED NOT NULL,
+  seller_id BIGINT UNSIGNED NOT NULL,
+  status ENUM('pending','accepted','completed','cancelled','rejected') NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  completed_at TIMESTAMP NULL,
+  CONSTRAINT fk_transactions_listing FOREIGN KEY (listing_id) REFERENCES listings(id) ON DELETE SET NULL,
+  CONSTRAINT fk_transactions_conversation FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE SET NULL,
+  CONSTRAINT fk_transactions_buyer FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_transactions_seller FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT chk_transaction_parties CHECK (buyer_id <> seller_id),
+  INDEX idx_transactions_listing_status (listing_id, status),
+  INDEX idx_transactions_buyer (buyer_id, created_at),
+  INDEX idx_transactions_seller (seller_id, created_at)
+) ENGINE=InnoDB;
+
+-- One buyer review per transaction
+CREATE TABLE IF NOT EXISTS reviews (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  transaction_id BIGINT UNSIGNED NOT NULL,
+  reviewer_id BIGINT UNSIGNED NOT NULL,
+  reviewed_user_id BIGINT UNSIGNED NOT NULL,
+  rating TINYINT UNSIGNED NOT NULL,
+  comment VARCHAR(1000) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_reviews_transaction FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_reviews_reviewer FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_reviews_reviewed_user FOREIGN KEY (reviewed_user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT chk_review_rating CHECK (rating BETWEEN 1 AND 5),
+  CONSTRAINT chk_review_parties CHECK (reviewer_id <> reviewed_user_id),
+  UNIQUE KEY uq_review_transaction (transaction_id),
+  INDEX idx_reviews_reviewed_user (reviewed_user_id, created_at)
+) ENGINE=InnoDB;
+

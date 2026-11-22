@@ -52,6 +52,50 @@
     </div>
   </section>
 
+  <section class="panel" style="padding:24px;margin-bottom:28px">
+    <h3>Seller Reviews</h3>
+
+    <?php
+      $ratingAverage = (float) ($sellerRating['average_rating'] ?? 0);
+      $ratingCount = (int) ($sellerRating['review_count'] ?? 0);
+    ?>
+
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+      <strong style="font-size:28px"><?= number_format($ratingAverage, 1) ?>/5</strong>
+      <span style="color:#e5a000;font-size:22px" aria-label="<?= e(number_format($ratingAverage, 1)) ?> out of 5 stars">
+        <?php for ($star = 1; $star <= 5; $star++): ?>
+          <?= $star <= round($ratingAverage) ? '★' : '☆' ?>
+        <?php endfor; ?>
+      </span>
+      <span class="muted small">
+        <?= $ratingCount ?> <?= $ratingCount === 1 ? 'review' : 'reviews' ?>
+      </span>
+    </div>
+
+    <?php if (!empty($sellerReviews)): ?>
+      <div style="display:grid;gap:16px">
+        <?php foreach ($sellerReviews as $review): ?>
+          <article style="padding-top:16px;border-top:1px solid var(--border,#ddd)">
+            <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
+              <strong><?= e($review['reviewer_name'] ?? 'Student') ?></strong>
+              <span class="muted small"><?= e(displayDate($review['created_at'] ?? null)) ?></span>
+            </div>
+            <div style="color:#e5a000;margin:6px 0" aria-label="<?= (int) $review['rating'] ?> out of 5 stars">
+              <?php for ($star = 1; $star <= 5; $star++): ?>
+                <?= $star <= (int) $review['rating'] ? '★' : '☆' ?>
+              <?php endfor; ?>
+            </div>
+            <?php if (!empty($review['comment'])): ?>
+              <p style="margin:0"><?= nl2br(e($review['comment'])) ?></p>
+            <?php endif; ?>
+          </article>
+        <?php endforeach; ?>
+      </div>
+    <?php else: ?>
+      <p class="muted">This seller has not received any reviews yet.</p>
+    <?php endif; ?>
+  </section>
+
   <?php if (!empty($profile['bio'])): ?>
     <section class="panel" style="padding:24px;margin-bottom:28px">
       <h3>About</h3>

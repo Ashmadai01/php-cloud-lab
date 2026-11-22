@@ -12,9 +12,18 @@ final class ChatRepository
 
     public function findOrCreateConversation(int $listingId, int $buyerId, int $sellerId): int
     {
-        // Find existing conversation for this listing + buyer.
-        $s = $this->db->prepare('SELECT c.id FROM conversations c JOIN conversation_participants cp ON cp.conversation_id = c.id WHERE c.listing_id = ? AND cp.user_id = ? LIMIT 1');
-        $s->execute([$listingId, $buyerId]);
+        // Find an existing conversation for this listing and exact buyer/seller pair.
+        $s = $this->db->prepare(
+            'SELECT c.id
+             FROM conversations c
+             JOIN conversation_participants buyer
+               ON buyer.conversation_id = c.id AND buyer.user_id = ?
+             JOIN conversation_participants seller
+               ON seller.conversation_id = c.id AND seller.user_id = ?
+             WHERE c.listing_id = ?
+             LIMIT 1'
+        );
+        $s->execute([$buyerId, $sellerId, $listingId]);
         $row = $s->fetch();
         if ($row) return (int) $row['id'];
         $this->db->beginTransaction();

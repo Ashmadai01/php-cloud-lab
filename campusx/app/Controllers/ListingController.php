@@ -109,6 +109,10 @@ final class ListingController extends Controller
         if ($data === null) {
             $this->view('listings/edit', ['title' => 'Edit listing', 'listing' => $listing, 'images' => $repo->images($id), 'categories' => $repo->categories(), 'errors' => $this->lastErrors], 422);
         }
+
+        // Listing status must be changed through dedicated workflows.
+        $data['status'] = $listing['status'];
+
         $repo->update($id, $data);
         $this->handleImages($repo, $id);
         flash('success', 'Listing updated!');
