@@ -40,10 +40,20 @@
         </dl>
         <hr>
         <h3>Seller</h3>
-        <p class="mb"><strong><?= e($listing['seller_name']) ?></strong>
+        <div class="flex mb" style="align-items:center;gap:12px">
+          <a href="<?= url('/users/' . (int) $listing['seller_id']) ?>" style="display:flex;align-items:center;gap:12px;text-decoration:none">
+            <?php if (!empty($listing['seller_avatar'])): ?>
+              <img src="<?= e(\SdutSwap\Core\Upload::publicPath($listing['seller_avatar'])) ?>" alt="<?= e($listing['seller_name']) ?>" style="width:52px;height:52px;border-radius:50%;object-fit:cover">
+            <?php else: ?>
+              <span style="width:52px;height:52px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:1.3rem">👤</span>
+            <?php endif; ?>
+            <strong><?= e($listing['seller_name']) ?></strong>
+          </a>
           <?php if (!empty($listing['seller_verified'])): ?><span class="verified-badge">✓ Verified student</span><?php endif; ?>
-          <?php if (!empty($listing['seller_university'])): ?><br><span class="muted small"><?= e($listing['seller_university']) ?></span><?php endif; ?>
-        </p>
+        </div>
+        <?php if (!empty($listing['seller_university'])): ?>
+          <p class="muted small"><?= e($listing['seller_university']) ?></p>
+        <?php endif; ?>
         <?php if (!empty($user) && !$isOwner && $listing['status'] === 'active'): ?>
           <form method="post" action="<?= url('/listings/' . (int) $listing['id'] . '/message') ?>">
             <?= csrfField() ?>

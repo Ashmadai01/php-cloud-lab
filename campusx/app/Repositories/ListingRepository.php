@@ -93,7 +93,7 @@ final class ListingRepository
         if (isset($filters['max_price']) && $filters['max_price'] !== '') { $where[] = 'l.price <= ?'; $params[] = (float) $filters['max_price']; }
         $sortMap = ['newest' => 'l.created_at DESC', 'oldest' => 'l.created_at ASC', 'price_asc' => 'l.price ASC', 'price_desc' => 'l.price DESC', 'popular' => 'l.views DESC'];
         $sort = $sortMap[$filters['sort'] ?? 'newest'] ?? 'l.created_at DESC';
-        $sql = 'SELECT l.*, (SELECT li.file_path FROM listing_images li WHERE li.listing_id = l.id ORDER BY li.sort_order, li.id LIMIT 1) AS cover_path, c.name AS category_name, u.name AS seller_name, u.is_verified AS seller_verified FROM listings l LEFT JOIN categories c ON c.id = l.category_id JOIN users u ON u.id = l.seller_id WHERE ' . implode(' AND ', $where) . " ORDER BY {$sort} LIMIT ? OFFSET ?";
+        $sql = 'SELECT l.*, (SELECT li.file_path FROM listing_images li WHERE li.listing_id = l.id ORDER BY li.sort_order, li.id LIMIT 1) AS cover_path, c.name AS category_name, u.name AS seller_name, u.is_verified AS seller_verified, u.avatar_path AS seller_avatar FROM listings l LEFT JOIN categories c ON c.id = l.category_id JOIN users u ON u.id = l.seller_id WHERE ' . implode(' AND ', $where) . " ORDER BY {$sort} LIMIT ? OFFSET ?";
         $s = $this->db->prepare($sql);
         $i = 1;
         foreach ($params as $p) { $s->bindValue($i++, $p, is_int($p) ? PDO::PARAM_INT : PDO::PARAM_STR); }

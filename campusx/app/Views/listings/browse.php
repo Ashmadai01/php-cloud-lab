@@ -138,7 +138,14 @@
             </div>
 
             <div class="card-meta marketplace-product-meta">
-              <span><?= e($l['seller_name']) ?></span>
+              <a href="<?= url('/users/' . (int) $l['seller_id']) ?>" style="display:flex;align-items:center;gap:8px;text-decoration:none">
+                <?php if (!empty($l['seller_avatar'])): ?>
+                  <img src="<?= e(\SdutSwap\Core\Upload::publicPath($l['seller_avatar'])) ?>" alt="<?= e($l['seller_name']) ?>" style="width:30px;height:30px;border-radius:50%;object-fit:cover">
+                <?php else: ?>
+                  <span style="width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--surface)">👤</span>
+                <?php endif; ?>
+                <span><?= e($l['seller_name']) ?></span>
+              </a>
               <span><?= e(timeAgo($l['created_at'])) ?></span>
             </div>
           </div>
