@@ -144,6 +144,42 @@ final class ListingRepository
         return $s->fetchAll();
     }
 
+    public function publicStatsForSeller(int $sellerId): array
+    {
+        $s = $this->db->prepare(
+            "SELECT
+                COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0) AS active_listings,
+                COALESCE(SUM(CASE WHEN status = 'sold' THEN 1 ELSE 0 END), 0) AS sold_listings,
+                COALESCE(SUM(views), 0) AS total_views
+             FROM listings
+             WHERE seller_id = ? AND status != 'removed'"
+        );
+        $s->execute([$sellerId]);
+        return $s->fetch() ?: [];
+    }
+
+    public function publicActiveBySeller(int $sellerId, int $limit = 6): array
+    {
+        $s = $this->db->prepare(
+            "SELECT l.*,
+                (SELECT li.file_path
+                 FROM listing_images li
+                 WHERE li.listing_id = l.id
+                 ORDER BY li.sort_order, li.id
+                 LIMIT 1) AS cover_path,
+                c.name AS category_name
+             FROM listings l
+             LEFT JOIN categories c ON c.id = l.category_id
+             WHERE l.seller_id = ? AND l.status = 'active'
+             ORDER BY l.created_at DESC
+             LIMIT ?"
+        );
+        $s->bindValue(1, $sellerId, PDO::PARAM_INT);
+        $s->bindValue(2, max(1, $limit), PDO::PARAM_INT);
+        $s->execute();
+        return $s->fetchAll();
+    }
+
     public function toggleFavorite(int $userId, int $listingId): bool
     {
         $s = $this->db->prepare('SELECT id FROM favorites WHERE user_id = ? AND listing_id = ? LIMIT 1');

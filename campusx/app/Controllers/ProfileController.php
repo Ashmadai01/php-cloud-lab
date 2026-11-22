@@ -8,6 +8,7 @@ use SdutSwap\Core\Config;
 use SdutSwap\Core\Upload;
 use SdutSwap\Core\Validator;
 use SdutSwap\Repositories\BlockRepository;
+use SdutSwap\Repositories\ListingRepository;
 use SdutSwap\Repositories\UserRepository;
 use SdutSwap\Repositories\VerificationRepository;
 use SdutSwap\Services\SessionService;
@@ -41,9 +42,15 @@ final class ProfileController extends Controller
             abort(404, 'Profile not found');
         }
 
+        $listingRepository = new ListingRepository();
+        $stats = $listingRepository->publicStatsForSeller($id);
+        $listings = $listingRepository->publicActiveBySeller($id, 6);
+
         $this->view('profile/public', [
             'title' => $profile['name'] . ' - Profile',
             'profile' => $profile,
+            'stats' => $stats,
+            'listings' => $listings,
         ]);
     }
 
