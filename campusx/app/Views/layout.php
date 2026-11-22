@@ -23,15 +23,23 @@
     Messages
     <span class="badge-count" data-unread-badge hidden>0</span>
 </a>
-        <a href="<?= url('/notifications') ?>" aria-label="Notifications">
-          Notifications
+        <a href="<?= url('/profile') ?>" class="nav-profile" aria-label="My profile" title="My profile">
+          <?php if (!empty($user['avatar_path'])): ?>
+            <img src="<?= e(\SdutSwap\Core\Upload::publicPath((string) $user['avatar_path'])) ?>" alt="Profile picture">
+          <?php else: ?>
+            <span class="nav-profile-fallback"><?= e(strtoupper(substr((string) ($user['name'] ?? 'U'), 0, 1))) ?></span>
+          <?php endif; ?>
+        </a>
+        <a href="<?= url('/notifications') ?>" class="notification-bell" aria-label="Notifications<?= ($notificationUnreadCount ?? 0) > 0 ? ', ' . (int) $notificationUnreadCount . ' unread' : '' ?>" title="Notifications">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>
+          </svg>
           <?php if (($notificationUnreadCount ?? 0) > 0): ?>
             <span class="badge-count"><?= (int) $notificationUnreadCount ?></span>
           <?php endif; ?>
         </a>
         <a href="<?= url('/favorites') ?>">Favorites</a>
         <a href="<?= url('/my-listings') ?>">My Listings</a>
-        <a href="<?= url('/profile') ?>">Profile</a>
         <a href="<?= url('/support/my') ?>">Support</a>
         <?php if (($user['role'] ?? '') === 'admin'): ?>
           <a href="<?= url('/admin') ?>">Admin</a>
