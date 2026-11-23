@@ -233,6 +233,13 @@ final class ListingController extends Controller
                 'size' => $_FILES['images']['size'][$i] ?? 0,
             ];
             if ($file['error'] === UPLOAD_ERR_NO_FILE) continue;
+            // Run server-side SafeSearch before saving or publishing the image.
+            $moderation = ImageModeration::inspect((string) ($file['tmp_name'] ?? ''));
+            if (!$moderation['ok']) {
+                flash('error', 'One image was blocked: ' . (string) ($moderation['error'] ?? 'Safety check failed.'));
+                continue;
+            }
+
             $res = Upload::storeImage($file, 'listings/' . $listingId, $max);
             if ($res['ok']) {
                 $repo->addImage($listingId, (string) $res['path'], $repo->nextImageOrder($listingId));
