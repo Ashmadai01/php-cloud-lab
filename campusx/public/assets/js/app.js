@@ -480,6 +480,24 @@ if (presenceEl && data.presence) {
   }
 
 
+  // Search within the saved favorites grid.
+  var favoritesSearch = document.getElementById('favoritesSearch');
+  if (favoritesSearch) {
+    var favoriteCards = Array.from(document.querySelectorAll('[data-favorite-card]'));
+    var noFavoriteResults = document.querySelector('[data-favorites-no-results]');
+    favoritesSearch.addEventListener('input', function () {
+      var query = favoritesSearch.value.trim().toLocaleLowerCase();
+      var visible = 0;
+      favoriteCards.forEach(function (card) {
+        var title = (card.getAttribute('data-title') || '').toLocaleLowerCase();
+        var matches = title.indexOf(query) !== -1;
+        card.hidden = !matches;
+        if (matches) visible++;
+      });
+      if (noFavoriteResults) noFavoriteResults.hidden = visible !== 0;
+    });
+  }
+
   // Favorite toggle (AJAX — update the button without reloading the listing page).
   document.querySelectorAll('[data-favorite-form]').forEach(function (form) {
     form.addEventListener('submit', function (event) {
@@ -511,6 +529,24 @@ if (presenceEl && data.presence) {
         button.textContent = data.isFavorite ? '★ Saved to favorites' : '☆ Save to favorites';
         button.setAttribute('aria-pressed', data.isFavorite ? 'true' : 'false');
         showToast(data.message || 'Favorites updated.', 'success');
+
+        var favoriteCard = form.closest('[data-favorite-card]');
+        if (favoriteCard && !data.isFavorite) {
+          var grid = favoriteCard.parentElement;
+          favoriteCard.remove();
+          var countEl = document.querySelector('[data-favorites-count]');
+          var remaining = grid ? grid.querySelectorAll('[data-favorite-card]').length : 0;
+          if (countEl) countEl.textContent = String(remaining);
+          if (remaining === 0) {
+            if (grid) grid.hidden = true;
+            var toolbarSearch = document.querySelector('.favorites-search');
+            if (toolbarSearch) toolbarSearch.hidden = true;
+            var emptyState = document.querySelector('[data-favorites-empty]');
+            if (emptyState) emptyState.hidden = false;
+            var noResults = document.querySelector('[data-favorites-no-results]');
+            if (noResults) noResults.hidden = true;
+          }
+        }
       })
       .catch(function (error) {
         button.textContent = previousText;
