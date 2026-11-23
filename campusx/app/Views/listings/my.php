@@ -73,31 +73,4 @@ $totalViews = (int) ($stats['total_views'] ?? 0);
     <?php endif; ?>
   </section>
 </div>
-<script>
-(() => {
-  const table = document.getElementById('myListingsTable');
-  if (!table) return;
-  const rows = Array.from(table.querySelectorAll('tbody tr'));
-  const search = document.getElementById('listingSearch');
-  const empty = document.getElementById('listingNoResults');
-  const filters = Array.from(document.querySelectorAll('.listing-filter'));
-  let activeFilter = 'all';
-  const apply = () => {
-    const query = (search.value || '').trim().toLocaleLowerCase();
-    let visible = 0;
-    rows.forEach(row => {
-      const matches = (activeFilter === 'all' || row.dataset.status === activeFilter)
-        && (row.dataset.title || '').includes(query);
-      row.hidden = !matches;
-      if (matches) visible++;
-    });
-    empty.hidden = visible !== 0;
-  };
-  filters.forEach(button => button.addEventListener('click', () => {
-    activeFilter = button.dataset.filter;
-    filters.forEach(item => item.classList.toggle('is-selected', item === button));
-    apply();
-  }));
-  search.addEventListener('input', apply);
-})();
-</script>
+
