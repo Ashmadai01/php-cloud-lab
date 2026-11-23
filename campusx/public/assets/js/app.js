@@ -616,3 +616,39 @@ if (presenceEl && data.presence) {
   applySupportSearch();
 
 })();
+
+
+  // Contact Support: live message counter and attachment feedback.
+  var supportMessage = document.getElementById('body');
+  var supportMessageCount = document.getElementById('supportMessageCount');
+  if (supportMessage && supportMessageCount) {
+    var updateSupportMessageCount = function () {
+      supportMessageCount.textContent = String(supportMessage.value.length);
+    };
+    supportMessage.addEventListener('input', updateSupportMessageCount);
+    updateSupportMessageCount();
+  }
+
+  var supportAttachments = document.getElementById('attachments');
+  var supportAttachmentHint = document.getElementById('supportAttachmentHint');
+  if (supportAttachments && supportAttachmentHint) {
+    supportAttachments.addEventListener('change', function () {
+      var files = Array.from(supportAttachments.files || []);
+      if (files.length > 3) {
+        supportAttachments.value = '';
+        supportAttachmentHint.textContent = 'Please select no more than 3 images.';
+        showToast('You can attach up to 3 images.', 'error');
+        return;
+      }
+      var total = files.reduce(function (sum, file) { return sum + file.size; }, 0);
+      var tooLarge = files.find(function (file) { return file.size > 5 * 1024 * 1024; });
+      if (tooLarge) {
+        supportAttachments.value = '';
+        supportAttachmentHint.textContent = 'One of the selected files exceeds 5 MB. Please choose smaller images.';
+        return;
+      }
+      supportAttachmentHint.textContent = files.length
+        ? files.length + ' image' + (files.length === 1 ? '' : 's') + ' selected · ' + (total / (1024 * 1024)).toFixed(1) + ' MB total.'
+        : 'Attachments help us understand the issue faster. Please hide sensitive information before uploading.';
+    });
+  }
