@@ -28,10 +28,19 @@
   <?php if (!empty($notifications)): ?>
     <div class="notifications-list">
       <?php foreach ($notifications as $n): ?>
-        <?php $isUnread = $n['read_at'] === null; ?>
+        <?php
+          $isUnread = $n['read_at'] === null;
+          $isPurchase = !empty($n['conversation_id']);
+          $iconClass = $n['ticket_id'] !== null
+              ? 'is-support'
+              : ($isPurchase ? 'is-purchase' : 'is-general');
+          $icon = $n['ticket_id'] !== null
+              ? '🎧'
+              : ($isPurchase ? '🛒' : '🔔');
+        ?>
         <article class="notification-item <?= $isUnread ? 'is-unread' : 'is-read' ?>">
-          <div class="notification-icon <?= $n['ticket_id'] !== null ? 'is-support' : 'is-general' ?>">
-            <?= $n['ticket_id'] !== null ? '🎧' : '🔔' ?>
+          <div class="notification-icon <?= $iconClass ?>">
+            <?= $icon ?>
           </div>
 
           <div class="notification-content">
@@ -47,10 +56,10 @@
           </div>
 
           <div class="notification-actions">
-            <?php if ($n['ticket_id'] !== null): ?>
+            <?php if ($n['ticket_id'] !== null || $isPurchase): ?>
               <a class="btn btn-primary btn-sm"
                  href="<?= url('/notifications/' . (int) $n['id'] . '/open') ?>">
-                View ticket →
+                <?= $isPurchase ? 'Open conversation →' : 'View ticket →' ?>
               </a>
             <?php endif; ?>
 

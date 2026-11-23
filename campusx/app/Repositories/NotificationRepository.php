@@ -19,14 +19,15 @@ final class NotificationRepository
         int $userId,
         ?int $ticketId,
         string $type,
-        string $message
+        string $message,
+        ?int $conversationId = null
     ): int {
         $s = $this->db->prepare(
-            'INSERT INTO notifications (user_id, ticket_id, type, message)
-             VALUES (?, ?, ?, ?)'
+            'INSERT INTO notifications (user_id, ticket_id, conversation_id, type, message)
+             VALUES (?, ?, ?, ?, ?)'
         );
 
-        $s->execute([$userId, $ticketId, $type, $message]);
+        $s->execute([$userId, $ticketId, $conversationId, $type, $message]);
 
         return (int) $this->db->lastInsertId();
     }
@@ -51,7 +52,7 @@ final class NotificationRepository
         $limit = max(1, min(100, $limit));
 
         $s = $this->db->prepare(
-            'SELECT id, ticket_id, type, message, read_at, created_at
+            'SELECT id, ticket_id, conversation_id, type, message, read_at, created_at
              FROM notifications
              WHERE user_id = ?
              ORDER BY created_at DESC, id DESC
@@ -107,6 +108,28 @@ final class NotificationRepository
         $this->markAsRead($notificationId, $userId);
 
         return $ticketId === null ? null : (int) $ticketId;
+    }
+
+    public function markAsReadAndGetConversationId(
+        int $notificationId,
+        int $userId
+    ): ?int {
+        $s = $this->db->prepare(
+            'SELECT conversation_id FROM notifications
+             WHERE id = ? AND user_id = ?
+             LIMIT 1'
+        );
+        $s->execute([$notificationId, $userId]);
+
+        $conversationId = $s->fetchColumn();
+
+        if ($conversationId === false) {
+            return null;
+        }
+
+        $this->markAsRead($notificationId, $userId);
+
+        return $conversationId === null ? null : (int) $conversationId;
     }
 
     public function markAllAsRead(int $userId): void

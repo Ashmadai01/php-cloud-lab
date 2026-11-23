@@ -27,10 +27,16 @@ final class NotificationController extends Controller
         Auth::requireLogin();
 
         $repo = new NotificationRepository();
-        $ticketId = $repo->markAsReadAndGetTicketId($id, (int) Auth::id());
+        $userId = (int) Auth::id();
 
+        $ticketId = $repo->markAsReadAndGetTicketId($id, $userId);
         if ($ticketId !== null) {
             redirect('/support/tickets/' . $ticketId);
+        }
+
+        $conversationId = $repo->markAsReadAndGetConversationId($id, $userId);
+        if ($conversationId !== null) {
+            redirect('/messages/' . $conversationId);
         }
 
         redirect('/notifications');

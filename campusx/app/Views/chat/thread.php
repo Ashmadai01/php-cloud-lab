@@ -104,23 +104,37 @@
       <?php endif; ?>
 
       <?php if ($transaction['status'] === 'completed' && $isBuyer && empty($transaction['review_id'])): ?>
-        <form method="post" action="<?= url('/transactions/' . (int) $transaction['id'] . '/review') ?>">
+        <form class="review-form" method="post" action="<?= url('/transactions/' . (int) $transaction['id'] . '/review') ?>">
           <?= csrfField() ?>
-          <label for="transaction-rating">Your rating</label>
-          <select id="transaction-rating" name="rating" required>
-            <option value="">Choose a rating</option>
-            <option value="5">★★★★★ - Excellent</option>
-            <option value="4">★★★★ - Very good</option>
-            <option value="3">★★★ - Good</option>
-            <option value="2">★★ - Fair</option>
-            <option value="1">★ - Poor</option>
-          </select>
 
-          <label for="transaction-comment">Comment (optional)</label>
-          <textarea id="transaction-comment" name="comment" maxlength="1000"
-                    placeholder="Share your experience..."></textarea>
+          <div class="review-form-heading">
+            <span class="review-eyebrow">SHARE YOUR EXPERIENCE</span>
+            <h3>How was your purchase?</h3>
+            <p>Your feedback helps build trust in the SDUTSwap community.</p>
+          </div>
 
-          <button class="btn btn-primary" type="submit">Submit Review</button>
+          <fieldset class="rating-field">
+            <legend>Your rating</legend>
+            <div class="rating-stars" role="radiogroup" aria-label="Choose your rating">
+              <?php for ($star = 5; $star >= 1; $star--): ?>
+                <input type="radio" id="rating-<?= $star ?>"
+                       name="rating" value="<?= $star ?>" required>
+                <label for="rating-<?= $star ?>" title="<?= $star ?> out of 5 stars">★</label>
+              <?php endfor; ?>
+            </div>
+            <small class="rating-hint">Select from 1 to 5 stars</small>
+          </fieldset>
+
+          <div class="review-comment-field">
+            <label for="transaction-comment">Your comment <span>(optional)</span></label>
+            <textarea id="transaction-comment" name="comment" maxlength="1000"
+                      rows="4" placeholder="Tell others about your experience with this seller..."></textarea>
+            <small>Maximum 1000 characters.</small>
+          </div>
+
+          <button class="btn btn-primary review-submit" type="submit">
+            Submit Review <span aria-hidden="true">→</span>
+          </button>
         </form>
       <?php endif; ?>
 

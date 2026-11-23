@@ -5,6 +5,7 @@ namespace SdutSwap\Controllers;
 
 use SdutSwap\Core\Auth;
 use SdutSwap\Repositories\TransactionRepository;
+use SdutSwap\Repositories\NotificationRepository;
 
 final class TransactionController extends Controller
 {
@@ -15,7 +16,17 @@ final class TransactionController extends Controller
 
         try {
             $repo = new TransactionRepository();
-            $repo->createRequest($conversationId, (int) Auth::id());
+            $transactionId = $repo->createRequest($conversationId, (int) Auth::id());
+            $transaction = $repo->findForUser($transactionId, (int) Auth::id());
+
+            if ($transaction) {
+                $this->notify(
+                    (int) $transaction['seller_id'],
+                    'purchase_request',
+                    'You have received a new purchase request for "' . ($transaction['listing_title'] ?? 'your listing') . '".',
+                    $conversationId
+                );
+            }
 
             flash('success', 'Purchase request sent successfully.');
         } catch (\DomainException $e) {
@@ -59,6 +70,15 @@ final class TransactionController extends Controller
                 $decision === 'accept'
             );
 
+            $this->notify(
+                (int) $transaction['buyer_id'],
+                $decision === 'accept' ? 'purchase_accepted' : 'purchase_rejected',
+                $decision === 'accept'
+                    ? 'Your purchase request for "' . ($transaction['listing_title'] ?? 'a listing') . '" was accepted.'
+                    : 'Your purchase request for "' . ($transaction['listing_title'] ?? 'a listing') . '" was rejected.',
+                $conversationId
+            );
+
             flash('success', $decision === 'accept'
                 ? 'Purchase request accepted.'
                 : 'Purchase request rejected.');
@@ -91,6 +111,14 @@ final class TransactionController extends Controller
 
         try {
             $repo->confirmReceipt($transactionId, (int) Auth::id());
+
+            $this->notify(
+                (int) $transaction['seller_id'],
+                'purchase_completed',
+                'The buyer confirmed receipt of "' . ($transaction['listing_title'] ?? 'your listing') . '".',
+                $conversationId
+            );
+
             flash('success', 'Receipt confirmed. The listing is now marked as sold.');
         } catch (\DomainException $e) {
             flash('error', $e->getMessage());
@@ -148,4 +176,24 @@ final class TransactionController extends Controller
 
         redirect('/messages/' . $conversationId);
     }
+
+    private function notify(
+        int $userId,
+        string $type,
+        string $message,
+        int $conversationId
+    ): void {
+        try {
+            (new NotificationRepository())->create(
+                $userId,
+                null,
+                $type,
+                $message,
+                $conversationId
+            );
+        } catch (\Throwable $e) {
+            error_log('Transaction notification failed: ' . $e->getMessage());
+        }
+    }
+
 }
