@@ -3730,3 +3730,32 @@ tr:last-child td{border-bottom:0}
 @media(max-width:900px){.contact-support-layout{grid-template-columns:minmax(0,1fr) 260px;gap:15px}.contact-support-main{padding:24px}}
 @media(max-width:700px){.contact-support-hero{min-height:0;margin:20px 0;padding:28px 23px}.contact-support-hero-art{display:none}.contact-support-hero h1{font-size:2.3rem}.contact-support-hero p{font-size:.86rem}.contact-support-trust{display:grid;gap:7px}.contact-support-layout{grid-template-columns:1fr}.contact-support-main{padding:21px 17px}.contact-support-form-heading h2{font-size:1.3rem}.contact-support-field-grid{grid-template-columns:1fr;gap:0}.contact-support-submit-row{align-items:stretch;flex-direction:column}.contact-support-submit-row .btn{width:100%}.contact-support-sidebar{grid-template-columns:1fr 1fr}.contact-support-help-card{grid-column:1/-1}}
 @media(max-width:440px){.contact-support-sidebar{grid-template-columns:1fr}}
+
+
+/* Sell page — product photo uploader */
+.sell-photo-uploader{margin:18px 0 10px;padding:18px;border:1px solid #dbe5f2;border-radius:18px;background:linear-gradient(145deg,#fbfdff,#f3f7fc)}
+.sell-photo-dropzone{position:relative;display:flex;min-height:210px;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px;border:2px dashed #a9bdd8;border-radius:15px;background:rgba(255,255,255,.82);color:#263957;text-align:center;cursor:pointer;transition:border-color .2s,background .2s,transform .2s}
+.sell-photo-dropzone:hover,.sell-photo-dropzone.is-dragover{border-color:#2563eb;background:#eff6ff}
+.sell-photo-dropzone.is-dragover{transform:scale(1.01)}
+.sell-photo-dropzone input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;clip-path:inset(50%)}
+.sell-photo-upload-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;background:#e7efff;color:#2456a6;font-size:1.8rem;font-weight:700}
+.sell-photo-dropzone strong{font-size:1.08rem;color:#142b50}
+.sell-photo-dropzone>span:not(.sell-photo-upload-icon){font-size:.92rem;color:#64748b}
+.sell-photo-browse{color:#2563eb;font-weight:800;text-decoration:underline}
+.sell-photo-dropzone small{margin-top:5px;color:#74839a;font-size:.78rem}
+.sell-photo-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:17px 2px 12px;color:#64748b;font-size:.82rem;flex-wrap:wrap}
+.sell-photo-toolbar strong{color:#1e3558;font-size:.9rem}
+.sell-photo-format{font-size:.65rem;font-weight:800;letter-spacing:.09em;color:#71839d}
+.sell-photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.sell-photo-empty{grid-column:1/-1;display:flex;min-height:115px;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px solid #e4ebf4;border-radius:12px;background:#fff;color:#8391a5;text-align:center}
+.sell-photo-empty>span{font-size:1.4rem}.sell-photo-empty strong{font-size:.85rem;color:#52647e}.sell-photo-empty small{font-size:.75rem}
+.sell-photo-item{position:relative;min-width:0;overflow:hidden;aspect-ratio:1;border:1px solid #dce5f0;border-radius:13px;background:#e8eef6;box-shadow:0 3px 10px rgba(24,48,82,.07)}
+.sell-photo-item img{width:100%;height:100%;object-fit:cover}
+.sell-photo-item.is-cover{outline:2px solid #2563eb;outline-offset:1px}
+.sell-photo-cover{position:absolute;left:7px;top:7px;padding:4px 7px;border-radius:6px;background:#173b75;color:#fff;font-size:.64rem;font-weight:800}
+.sell-photo-remove{position:absolute;right:7px;top:7px;display:grid;place-items:center;width:29px;height:29px;border:1px solid rgba(255,255,255,.7);border-radius:50%;background:rgba(15,32,57,.82);color:#fff;font-size:1rem;cursor:pointer}
+.sell-photo-remove:hover{background:#b91c1c}
+.sell-photo-guidance{display:flex;gap:7px;align-items:flex-start;margin:14px 2px 0;color:#64748b;font-size:.8rem}
+.sell-photo-guidance span{color:#15803d;font-weight:900}
+.sell-photo-error{margin:10px 2px 0;padding:9px 11px;border-radius:9px;background:#fff1f2;color:#be123c;font-size:.82rem}
+@media(max-width:560px){.sell-photo-uploader{padding:12px}.sell-photo-dropzone{min-height:185px;padding:18px 12px}.sell-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sell-photo-toolbar{align-items:flex-start;flex-direction:column;gap:4px}}
