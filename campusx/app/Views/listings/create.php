@@ -116,14 +116,24 @@
             <div><h3>Product photos</h3><p>Show buyers exactly what they're getting.</p></div>
           </div>
 
-          <div class="sell-upload-box">
-            <div class="sell-upload-icon">↑</div>
-            <label for="images">Choose your photos</label>
-            <p>Click to browse files from your device</p>
-            <input id="images" name="images[]" type="file" accept=".jpg,.jpeg,.png,.webp" multiple>
-            <span class="sell-upload-note">Up to 6 photos · JPEG, PNG or WebP · Max 5 MB each</span>
+          <div class="sell-photo-uploader" id="sellPhotoUploader">
+            <div class="sell-photo-dropzone" id="sellPhotoDropzone" role="button" tabindex="0" aria-controls="images" aria-label="Add product photos">
+              <span class="sell-photo-upload-icon" aria-hidden="true">↑</span>
+              <strong>Drop your photos here</strong>
+              <span>or <span class="sell-photo-browse">browse files</span> from your device</span>
+              <small>JPG, PNG or WebP · Up to 6 photos · 5 MB per photo</small>
+              <input id="images" name="images[]" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple>
+            </div>
+            <div class="sell-photo-toolbar">
+              <div><strong id="sellPhotoCount">0 of 6 photos added</strong><span> · The first photo is your cover image</span></div>
+              <span class="sell-photo-format">REAL PHOTOS BUILD TRUST</span>
+            </div>
+            <div class="sell-photo-grid" id="sellPhotoPreview" aria-live="polite">
+              <div class="sell-photo-empty"><span>▧</span><strong>Your photos will appear here</strong><small>Add clear photos from different angles.</small></div>
+            </div>
+            <p class="sell-photo-guidance"><span>✓</span> Use natural light and show any scratches or defects. Avoid personal documents and contact details.</p>
+            <p class="sell-photo-error" id="sellPhotoError" role="alert" hidden></p>
           </div>
-          <p class="hint">The first photo becomes the main image. Do not include personal documents or contact details.</p>
 
           <button class="btn btn-primary btn-block sell-submit" type="submit">
             Publish your listing <span>→</span>
