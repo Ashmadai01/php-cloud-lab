@@ -692,9 +692,17 @@ if (presenceEl && data.presence) {
       card.className = 'sell-photo-item' + (index === 0 ? ' is-cover' : '');
       var image = document.createElement('img');
       image.alt = 'Product photo ' + (index + 1) + ': ' + file.name;
-      var url = URL.createObjectURL(file);
-      image.src = url;
-      image.onload = function () { URL.revokeObjectURL(url); };
+      // Use a data URL for preview so strict Content-Security-Policy rules
+      // that block blob: image sources do not prevent thumbnails from rendering.
+      var reader = new FileReader();
+      reader.onload = function (event) {
+        image.src = event.target.result;
+      };
+      reader.onerror = function () {
+        image.alt = 'Preview unavailable for ' + file.name;
+        card.classList.add('preview-unavailable');
+      };
+      reader.readAsDataURL(file);
       var remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'sell-photo-remove';
