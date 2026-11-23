@@ -12,3 +12,19 @@ storage/logs/*
 .vscode/
 backups/
 *.sql.bak
+
+# User uploaded files
+public/uploads/
+uploads/
+
+# Local backups and archives
+*.bak
+*.zip
+
+# Local user uploads and project archives
+/campusx/public/uploads/
+/uploads/
+/sdut-swap.zip
+
+# Local backup files
+*.bak

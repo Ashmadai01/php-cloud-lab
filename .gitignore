@@ -1,0 +1,12 @@
+# User uploads and local data
+/uploads/
+/campusx/public/uploads/
+
+# Local project archives and backups
+/sdut-swap.zip
+*.bak
+
+# Environment secrets
+/campusx/.env
+
+/campusx/public/uploads
