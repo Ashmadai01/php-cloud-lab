@@ -59,9 +59,9 @@
             <?= csrfField() ?>
             <button class="btn btn-primary btn-block" type="submit">💬 Message Seller</button>
           </form>
-          <form method="post" action="<?= url('/listings/' . (int) $listing['id'] . '/favorite') ?>" class="mt">
+          <form method="post" action="<?= url('/listings/' . (int) $listing['id'] . '/favorite') ?>" class="mt" data-favorite-form>
             <?= csrfField() ?>
-            <button class="btn btn-outline btn-block" type="submit"><?= $isFavorite ? '★ Saved to favorites' : '☆ Save to favorites' ?></button>
+            <button class="btn btn-outline btn-block" type="submit" aria-pressed="<?= $isFavorite ? 'true' : 'false' ?>"><?= $isFavorite ? '★ Saved to favorites' : '☆ Save to favorites' ?></button>
           </form>
           <p class="mt"><a href="<?= url('/report/listing/' . (int) $listing['id']) ?>">🚩 Report this listing</a></p>
         <?php elseif (empty($user)): ?>
