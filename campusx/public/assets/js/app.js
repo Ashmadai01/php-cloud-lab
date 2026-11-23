@@ -480,6 +480,48 @@ if (presenceEl && data.presence) {
   }
 
 
+  // Favorite toggle (AJAX — update the button without reloading the listing page).
+  document.querySelectorAll('[data-favorite-form]').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var button = form.querySelector('button[type="submit"]');
+      if (!button || button.disabled) return;
+
+      var previousText = button.textContent;
+      button.disabled = true;
+
+      fetch(form.action, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        },
+        body: new FormData(form),
+        credentials: 'same-origin'
+      })
+      .then(function (response) {
+        return response.json().then(function (data) {
+          if (!response.ok || !data.success) {
+            throw new Error(data.error || 'Could not update favorites.');
+          }
+          return data;
+        });
+      })
+      .then(function (data) {
+        button.textContent = data.isFavorite ? '★ Saved to favorites' : '☆ Save to favorites';
+        button.setAttribute('aria-pressed', data.isFavorite ? 'true' : 'false');
+        showToast(data.message || 'Favorites updated.', 'success');
+      })
+      .catch(function (error) {
+        button.textContent = previousText;
+        showToast(error.message || 'Could not update favorites.', 'error');
+      })
+      .finally(function () {
+        button.disabled = false;
+      });
+    });
+  });
+
   // Client-side file size hint (server enforces limits)
   document.querySelectorAll('input[type="file"]').forEach(function (input) {
     input.addEventListener('change', function () {
