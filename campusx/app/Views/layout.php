@@ -6,13 +6,14 @@
 <title><?= e($title ?? 'SDUT Swap') ?></title>
 <meta name="description" content="SDUT Swap — Your Campus. Your Marketplace. Buy and sell with verified students on your campus.">
 <?= csrfMeta() ?>
+<link rel="icon" type="image/svg+xml" href="<?= url('/favicon.svg') ?>">
 <link rel="stylesheet" href="<?= asset('css/app.css') ?>">
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to main content</a>
 <header class="site-header">
   <div class="container header-inner">
-    <a class="brand" href="<?= url('/') ?>">SDUT<span>Swap</span><span class="tagline">Your Campus. Your Marketplace.</span></a >
+    <a class="brand" href="<?= url('/') ?>" aria-label="CampusX home"><img src="<?= asset('images/campusx-logo.svg') ?>" alt="CampusX — Your Campus. Your Marketplace."></a >
     <nav class="main-nav" id="main-nav" aria-label="Main navigation">
       <a href="<?= url('/') ?>" class="nav-icon-link" aria-label="Home" title="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></a >
       <a href="<?= url('/marketplace') ?>" class="nav-icon-link" aria-label="Marketplace" title="Marketplace"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-1.5-6h-15zM5 9v12h14V9M9 21v-7h6v7M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/></svg><span>Marketplace</span></a >
