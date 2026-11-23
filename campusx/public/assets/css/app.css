@@ -4257,3 +4257,25 @@ tr:last-child td{border-bottom:0}
     margin-left: 9px;
   }
 }
+
+
+/* CampusX brand identity */
+.header-inner .brand {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  line-height: 1;
+}
+.header-inner .brand img {
+  display: block;
+  width: clamp(220px, 21vw, 285px);
+  height: auto;
+  max-height: 62px;
+  object-fit: contain;
+}
+@media (max-width: 700px) {
+  .header-inner .brand img {
+    width: clamp(155px, 46vw, 205px);
+    max-height: 48px;
+  }
+}
