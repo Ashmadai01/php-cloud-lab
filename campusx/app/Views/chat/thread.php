@@ -7,7 +7,7 @@
 
       <div class="chat-header-info">
         <span class="chat-eyebrow">CAMPUSX CONNECT</span>
-        <h1><?= e($conversation['listing_title'] ?? 'Conversation') ?></h1>
+        <h1>Conversation</h1>
 
         <?php foreach ($participants as $participant): ?>
           <?php if ((int) $participant['id'] === (int) $otherUserId): ?>
@@ -29,21 +29,24 @@
     </div>
 
     <?php if (!empty($otherUserId)): ?>
-      <form method="post" action="<?= url('/users/' . (int) $otherUserId . (!empty($iBlocked) ? '/unblock' : '/block')) ?>">
-        <?= csrfField() ?>
-        <input type="hidden" name="return" value="<?= e('/messages/' . (int) $conversation['id']) ?>">
-        <?php if (!empty($iBlocked)): ?>
-          <button class="chat-action-btn" type="submit">Unblock</button>
-        <?php else: ?>
-          <button class="chat-action-btn" type="submit" data-confirm="Block this user? Neither of you will be able to send messages.">Block</button>
-        <?php endif; ?>
-      </form>
+      <div class="chat-header-actions">
+        <a class="chat-profile-btn" href="<?= url('/users/' . (int) $otherUserId) ?>">View Profile</a>
+        <form method="post" action="<?= url('/users/' . (int) $otherUserId . (!empty($iBlocked) ? '/unblock' : '/block')) ?>">
+          <?= csrfField() ?>
+          <input type="hidden" name="return" value="<?= e('/messages/' . (int) $conversation['id']) ?>">
+          <?php if (!empty($iBlocked)): ?>
+            <button class="chat-action-btn" type="submit">Unblock</button>
+          <?php else: ?>
+            <button class="chat-action-btn" type="submit" data-confirm="Block this user? Neither of you will be able to send messages.">Block</button>
+          <?php endif; ?>
+        </form>
+      </div>
     <?php endif; ?>
   </div>
 
   <?php if (!empty($conversation['listing_id'])): ?>
     <a class="chat-listing-card" href="<?= url('/listings/' . (int) $conversation['listing_id']) ?>">
-      <span class="chat-listing-icon">⌂</span>
+      <img class="chat-listing-image" src="<?= e(listingCoverUrl($conversation['listing_cover_path'] ?? null)) ?>" alt="<?= e($conversation['listing_title']) ?>">
       <span class="chat-listing-info">
         <small>DISCUSSING ITEM</small>
         <strong><?= e($conversation['listing_title']) ?></strong>

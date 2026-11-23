@@ -133,7 +133,9 @@ final class ChatRepository
 
     public function conversation(int $convId): ?array
     {
-        $s = $this->db->prepare('SELECT c.*, l.title AS listing_title, l.price AS listing_price, l.status AS listing_status FROM conversations c LEFT JOIN listings l ON l.id = c.listing_id WHERE c.id = ? LIMIT 1');
+        $s = $this->db->prepare('SELECT c.*, l.title AS listing_title, l.price AS listing_price, l.status AS listing_status,
+            (SELECT li.file_path FROM listing_images li WHERE li.listing_id = l.id ORDER BY li.sort_order, li.id LIMIT 1) AS listing_cover_path
+            FROM conversations c LEFT JOIN listings l ON l.id = c.listing_id WHERE c.id = ? LIMIT 1');
         $s->execute([$convId]);
         $r = $s->fetch();
         return $r ?: null;
