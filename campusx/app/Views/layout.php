@@ -13,7 +13,10 @@
 <header class="site-header">
   <div class="container header-inner">
     <a class="brand" href="<?= url('/') ?>">SDUT<span>Swap</span><span class="tagline">Your Campus. Your Marketplace.</span></a >
-    <button class="mobile-toggle" aria-expanded="false" aria-controls="main-nav">Menu</button>
+    <button class="mobile-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="main-nav">
+      <span class="mobile-toggle-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+      <span class="mobile-toggle-label">Menu</span>
+    </button>
     <nav class="main-nav" id="main-nav" aria-label="Main navigation">
       <a href="<?= url('/') ?>">Home</a >
       <a href="<?= url('/marketplace') ?>">Marketplace</a >
