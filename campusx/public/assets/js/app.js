@@ -438,6 +438,48 @@ if (presenceEl && data.presence) {
     });
   }
 
+
+  // My Listings filters and search (external script for CSP compatibility).
+  var listingsTable = document.getElementById('myListingsTable');
+  if (listingsTable) {
+    var listingRows = Array.from(listingsTable.querySelectorAll('tbody tr'));
+    var listingSearch = document.getElementById('listingSearch');
+    var listingEmpty = document.getElementById('listingNoResults');
+    var listingFilters = Array.from(document.querySelectorAll('.listing-filter'));
+    var activeListingFilter = 'all';
+
+    function applyListingFilters() {
+      var query = listingSearch ? listingSearch.value.trim().toLocaleLowerCase() : '';
+      var visibleCount = 0;
+
+      listingRows.forEach(function (row) {
+        var status = (row.getAttribute('data-status') || '').trim().toLowerCase();
+        var title = (row.getAttribute('data-title') || '').toLocaleLowerCase();
+        var matches = (activeListingFilter === 'all' || status === activeListingFilter)
+          && title.indexOf(query) !== -1;
+        row.hidden = !matches;
+        if (matches) visibleCount++;
+      });
+
+      if (listingEmpty) listingEmpty.hidden = visibleCount !== 0;
+    }
+
+    listingFilters.forEach(function (button) {
+      button.addEventListener('click', function () {
+        activeListingFilter = (button.getAttribute('data-filter') || 'all').trim().toLowerCase();
+        listingFilters.forEach(function (item) {
+          item.classList.toggle('is-selected', item === button);
+          item.setAttribute('aria-pressed', item === button ? 'true' : 'false');
+        });
+        applyListingFilters();
+      });
+    });
+
+    if (listingSearch) listingSearch.addEventListener('input', applyListingFilters);
+    applyListingFilters();
+  }
+
+
   // Client-side file size hint (server enforces limits)
   document.querySelectorAll('input[type="file"]').forEach(function (input) {
     input.addEventListener('change', function () {

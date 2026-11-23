@@ -138,7 +138,7 @@ final class ListingController extends Controller
         Auth::requireLogin();
         $repo = new ListingRepository();
         $page = max(1, (int) $this->input('page', '1'));
-        $this->view('listings/my', ['title' => 'My Listings', 'listings' => $repo->bySeller(Auth::id(), $page, 20), 'page' => $page]);
+        $this->view('listings/my', ['title' => 'My Listings', 'listings' => $repo->bySeller(Auth::id(), $page, 20), 'stats' => $repo->dashboardStatsForSeller(Auth::id()), 'page' => $page]);
     }
 
     public function toggleFavorite(int $id): void
