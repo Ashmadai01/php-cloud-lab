@@ -571,4 +571,48 @@ if (presenceEl && data.presence) {
       }
     });
   });
+
+
+  // My Support: switch between tickets and reports, with a shared live search.
+  var supportTabs = Array.from(document.querySelectorAll('[data-support-tab]'));
+  var supportPanes = Array.from(document.querySelectorAll('[data-support-pane]'));
+  var supportSearch = document.getElementById('supportRequestSearch');
+
+  function applySupportSearch() {
+    var activePane = document.querySelector('[data-support-pane].is-active');
+    if (!activePane) return;
+    var query = supportSearch ? supportSearch.value.trim().toLocaleLowerCase() : '';
+    var items = Array.from(activePane.querySelectorAll('[data-support-item]'));
+    var visible = 0;
+    items.forEach(function (item) {
+      var haystack = (item.getAttribute('data-search') || item.textContent || '').toLocaleLowerCase();
+      var matches = haystack.indexOf(query) !== -1;
+      item.hidden = !matches;
+      if (matches) visible++;
+    });
+    var empty = activePane.querySelector('[data-support-no-results]');
+    if (empty) empty.hidden = visible !== 0;
+  }
+
+  supportTabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var target = tab.getAttribute('data-support-tab');
+      supportTabs.forEach(function (item) {
+        var selected = item === tab;
+        item.classList.toggle('is-active', selected);
+        item.setAttribute('aria-selected', selected ? 'true' : 'false');
+        item.tabIndex = selected ? 0 : -1;
+      });
+      supportPanes.forEach(function (pane) {
+        var selected = pane.getAttribute('data-support-pane') === target;
+        pane.classList.toggle('is-active', selected);
+        pane.hidden = !selected;
+      });
+      applySupportSearch();
+    });
+  });
+
+  if (supportSearch) supportSearch.addEventListener('input', applySupportSearch);
+  applySupportSearch();
+
 })();
