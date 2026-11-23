@@ -144,6 +144,23 @@ final class ListingRepository
         return $s->fetchAll();
     }
 
+    public function dashboardStatsForSeller(int $sellerId): array
+    {
+        $s = $this->db->prepare(
+            "SELECT
+                COUNT(CASE WHEN status != 'removed' THEN 1 END) AS total_listings,
+                COUNT(CASE WHEN status = 'active' THEN 1 END) AS active_listings,
+                COUNT(CASE WHEN status = 'sold' THEN 1 END) AS sold_listings,
+                COUNT(CASE WHEN status = 'draft' THEN 1 END) AS draft_listings,
+                COUNT(CASE WHEN status = 'hidden' THEN 1 END) AS hidden_listings,
+                COALESCE(SUM(CASE WHEN status != 'removed' THEN views ELSE 0 END), 0) AS total_views
+             FROM listings
+             WHERE seller_id = ?"
+        );
+        $s->execute([$sellerId]);
+        return $s->fetch() ?: [];
+    }
+
     public function publicStatsForSeller(int $sellerId): array
     {
         $s = $this->db->prepare(
