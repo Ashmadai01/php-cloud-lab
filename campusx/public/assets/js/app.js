@@ -652,3 +652,121 @@ if (presenceEl && data.presence) {
         : 'Attachments help us understand the issue faster. Please hide sensitive information before uploading.';
     });
   }
+
+
+// Sell page: accessible drag-and-drop image selection with previews and removal.
+(function () {
+  var input = document.getElementById('images');
+  var dropzone = document.getElementById('sellPhotoDropzone');
+  var preview = document.getElementById('sellPhotoPreview');
+  var countLabel = document.getElementById('sellPhotoCount');
+  var errorLabel = document.getElementById('sellPhotoError');
+  if (!input || !dropzone || !preview || !countLabel) return;
+
+  var selected = [];
+  var maxFiles = 6;
+  var maxSize = 5 * 1024 * 1024;
+  var allowed = ['image/jpeg', 'image/png', 'image/webp'];
+
+  function showError(message) {
+    errorLabel.textContent = message;
+    errorLabel.hidden = !message;
+  }
+
+  function syncInput() {
+    var transfer = new DataTransfer();
+    selected.forEach(function (file) { transfer.items.add(file); });
+    input.files = transfer.files;
+    countLabel.textContent = selected.length + ' of ' + maxFiles + ' photos added';
+    render();
+  }
+
+  function render() {
+    preview.innerHTML = '';
+    if (!selected.length) {
+      preview.innerHTML = '<div class="sell-photo-empty"><span>▧</span><strong>Your photos will appear here</strong><small>Add clear photos from different angles.</small></div>';
+      return;
+    }
+    selected.forEach(function (file, index) {
+      var card = document.createElement('div');
+      card.className = 'sell-photo-item' + (index === 0 ? ' is-cover' : '');
+      var image = document.createElement('img');
+      image.alt = 'Product photo ' + (index + 1) + ': ' + file.name;
+      var url = URL.createObjectURL(file);
+      image.src = url;
+      image.onload = function () { URL.revokeObjectURL(url); };
+      var remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'sell-photo-remove';
+      remove.setAttribute('aria-label', 'Remove photo ' + (index + 1));
+      remove.textContent = '×';
+      remove.addEventListener('click', function () {
+        selected.splice(index, 1);
+        showError('');
+        syncInput();
+      });
+      card.appendChild(image);
+      if (index === 0) {
+        var cover = document.createElement('span');
+        cover.className = 'sell-photo-cover';
+        cover.textContent = 'COVER PHOTO';
+        card.appendChild(cover);
+      }
+      card.appendChild(remove);
+      preview.appendChild(card);
+    });
+  }
+
+  function addFiles(files) {
+    showError('');
+    var incoming = Array.from(files || []);
+    for (var i = 0; i < incoming.length; i++) {
+      var file = incoming[i];
+      if (selected.length >= maxFiles) {
+        showError('You can add up to 6 photos. Remove a photo to add another.');
+        break;
+      }
+      if (allowed.indexOf(file.type) === -1) {
+        showError('"' + file.name + '" is not supported. Choose JPG, PNG or WebP images.');
+        continue;
+      }
+      if (file.size > maxSize) {
+        showError('"' + file.name + '" is larger than 5 MB. Choose a smaller image.');
+        continue;
+      }
+      if (selected.some(function (existing) { return existing.name === file.name && existing.size === file.size; })) continue;
+      selected.push(file);
+    }
+    syncInput();
+  }
+
+  dropzone.addEventListener('click', function (event) {
+    if (event.target.closest('input')) return;
+    input.click();
+  });
+  dropzone.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      input.click();
+    }
+  });
+  input.addEventListener('change', function () {
+    addFiles(input.files);
+  });
+  ['dragenter', 'dragover'].forEach(function (name) {
+    dropzone.addEventListener(name, function (event) {
+      event.preventDefault();
+      dropzone.classList.add('is-dragover');
+    });
+  });
+  ['dragleave', 'drop'].forEach(function (name) {
+    dropzone.addEventListener(name, function (event) {
+      event.preventDefault();
+      dropzone.classList.remove('is-dragover');
+    });
+  });
+  dropzone.addEventListener('drop', function (event) {
+    addFiles(event.dataTransfer.files);
+  });
+  render();
+})();
