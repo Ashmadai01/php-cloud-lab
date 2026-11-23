@@ -149,7 +149,13 @@ final class ListingController extends Controller
         $listing = $repo->findById($id);
         if (!$listing || $listing['status'] !== 'active') abort(404, 'Listing not found');
         $fav = $repo->toggleFavorite(Auth::id(), $id);
-        flash('success', $fav ? 'Added to favorites.' : 'Removed from favorites.');
+        $message = $fav ? 'Added to favorites.' : 'Removed from favorites.';
+
+        if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest') {
+            $this->json(['success' => true, 'isFavorite' => $fav, 'message' => $message]);
+        }
+
+        flash('success', $message);
         redirect('/listings/' . $id);
     }
 
