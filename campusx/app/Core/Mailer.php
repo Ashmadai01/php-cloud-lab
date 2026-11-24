@@ -75,9 +75,7 @@ final class Mailer
             . '<body style="margin:0;padding:32px 12px;background:#f4f2fb;font-family:Arial,Helvetica,sans-serif;color:#211b32;">'
             . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center">'
             . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #e9e4f3;border-radius:18px;overflow:hidden;">'
-            . '<tr><td style="padding:28px 36px;background:#171326;text-align:center;">'
-            . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr><td valign="middle" style="width:46px;height:46px;border-radius:12px;background:#7045c5;color:#ffffff;text-align:center;font-size:21px;font-weight:800;letter-spacing:-2px;">CX</td><td valign="middle" style="padding-left:12px;text-align:left;"><div style="color:#ffffff;font-size:27px;font-weight:800;letter-spacing:-1px;line-height:1.1;">Campus<span style="color:#a78bfa;">X</span></div><div style="margin-top:5px;color:#c4b5fd;font-size:9px;font-weight:700;letter-spacing:2px;">YOUR CAMPUS. YOUR MARKETPLACE.</div></td></tr></table>'
-            . '</td></tr><tr><td style="padding:38px 40px 18px;">'
+            . '<tr><td style="padding:38px 40px 18px;">'
             . '<p style="margin:0 0 12px;color:#7650c8;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">' . $safe($eyebrow) . '</p>'
             . '<h1 style="margin:0 0 20px;color:#211b32;font-size:28px;line-height:1.25;">' . $safe($heading) . '</h1>'
             . '<p style="margin:0 0 14px;font-size:16px;line-height:1.7;">Hi ' . $safe($name) . ',</p>'
@@ -86,10 +84,9 @@ final class Mailer
             . '<a href="' . $safeLink . '" style="display:inline-block;padding:14px 24px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;border-radius:9px;">' . $safe($buttonLabel) . '</a>'
             . '</td></tr></table>'
             . '<p style="margin:0 0 8px;color:#766f84;font-size:13px;line-height:1.7;">' . $safe($expiry) . '</p>'
-            . '<p style="margin:0;color:#766f84;font-size:13px;line-height:1.7;">If the button does not work, copy and paste this link into your browser:<br><a href="' . $safeLink . '" style="color:#7045c5;word-break:break-all;">' . $safeLink . '</a></p>'
             . '</td></tr><tr><td style="padding:18px 40px 32px;"><div style="height:1px;background:#eeeaf4;"></div>'
             . '<p style="margin:20px 0 0;color:#766f84;font-size:13px;line-height:1.7;">' . $safe($notice) . '</p>'
-            . '<p style="margin:18px 0 0;color:#554d65;font-size:14px;line-height:1.7;">Thanks,<br><strong>The CampusX Team</strong></p>'
+            . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;"><tr><td valign="middle" style="width:34px;height:34px;border-radius:9px;background:#7045c5;color:#ffffff;text-align:center;font-size:15px;font-weight:800;">CX</td><td valign="middle" style="padding-left:10px;color:#554d65;font-size:14px;line-height:1.6;">Thanks,<br><strong style="color:#211b32;">The CampusX Team</strong><br><span style="color:#7650c8;font-size:11px;font-weight:700;letter-spacing:1px;">YOUR CAMPUS. YOUR MARKETPLACE.</span></td></tr></table>'
             . '</td></tr></table><p style="margin:18px 0 0;color:#9992a8;font-size:11px;text-align:center;">CampusX · Your Campus. Your Marketplace.</p>'
             . '</td></tr></table></body></html>';
     }
