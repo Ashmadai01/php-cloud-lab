@@ -36,15 +36,21 @@ final class Session
         if (!isset($_SESSION['_created_at'])) $_SESSION['_created_at'] = time();
     }
 
-    public static function regenerate(): void
+    /**
+     * Regenerate the PHP session ID.
+     * When tracking is required, the existing server-side row must rotate too.
+     */
+    public static function regenerate(bool $requireTracked = false): bool
     {
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            $old = hash('sha256', (string) session_id());
-            session_regenerate_id(true);
-            $_SESSION['_created_at'] = time();
-            // Keep the "sessions & devices" tracking row pointing at the new session ID.
-            \SdutSwap\Services\SessionService::rotate($old, hash('sha256', (string) session_id()));
+        if (session_status() !== PHP_SESSION_ACTIVE) return false;
+        $old = hash('sha256', (string) session_id());
+        if (!session_regenerate_id(true)) return false;
+        $_SESSION['_created_at'] = time();
+        if ($requireTracked) {
+            $new = hash('sha256', (string) session_id());
+            if (!\SdutSwap\Services\SessionService::rotate($old, $new)) return false;
         }
+        return true;
     }
 
     public static function destroy(): void
