@@ -109,10 +109,22 @@ final class ProfileController extends Controller
         }
         $hash = password_hash($new, PASSWORD_ARGON2ID, ['memory_cost' => 65536, 'time_cost' => 4, 'threads' => 2]);
         if ($hash === false) $hash = password_hash($new, PASSWORD_BCRYPT, ['cost' => 12]);
-        (new UserRepository())->updatePassword(Auth::id(), (string) $hash);
-        \SdutSwap\Core\Session::regenerate();
-        // A password change signs out every OTHER device.
+        if ($hash === false || !(new UserRepository())->updatePassword((int) Auth::id(), $hash)) {
+            $this->renderProfile(['errors' => ['new_password' => ['The password could not be updated. Please try again.']]], 500);
+        }
+        if (!\SdutSwap\Core\Session::regenerate(true)) {
+            SessionService::revokeAllForUser((int) Auth::id());
+            Auth::logout();
+            flash('error', 'Your password was changed, but your session could not be secured. Please sign in again.');
+            redirect('/login');
+        }
         $closed = SessionService::revokeOthers((int) Auth::id());
+        if ($closed === null) {
+            SessionService::revokeAllForUser((int) Auth::id());
+            Auth::logout();
+            flash('error', 'Your password was changed, but device sessions could not be verified. Please sign in again.');
+            redirect('/login');
+        }
         Audit::security('password_changed', 'medium', "Password changed; {$closed} other session(s) revoked");
         flash('success', $closed > 0 ? "Password changed. {$closed} other device(s) were signed out." : 'Password changed.');
         redirect('/profile');
@@ -140,6 +152,10 @@ final class ProfileController extends Controller
         $this->requireCsrf();
         $this->rateLimit('session_revoke', 30, 3600, 3600);
         $closed = SessionService::revokeOthers((int) Auth::id());
+        if ($closed === null) {
+            flash('error', 'Device sessions could not be updated. Please try again.');
+            redirect('/profile');
+        }
         Audit::security('sessions_revoked_others', 'low', "{$closed} other session(s) revoked by their owner");
         flash('success', $closed > 0 ? "Signed out of {$closed} other device(s)." : 'There were no other devices signed in.');
         redirect('/profile');
