@@ -89,7 +89,10 @@ final class AuthController extends Controller
             $new = password_hash($password, PASSWORD_ARGON2ID, ['memory_cost' => 65536, 'time_cost' => 4, 'threads' => 2]);
             if ($new !== false) $users->updatePassword((int) $user['id'], (string) $new);
         }
-        Auth::login($user);
+        if (!Auth::login($user)) {
+            flash('error', 'We could not safely start your session. Please try signing in again.');
+            redirect('/login');
+        }
         flash('success', 'Welcome back, ' . $user['name'] . '!');
         redirect('/');
     }
