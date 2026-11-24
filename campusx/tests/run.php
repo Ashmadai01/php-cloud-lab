@@ -234,14 +234,20 @@ check("cannot revoke another user's session", $sess->revokeOwned($s1, $bobId) ==
 check('owner can revoke own session', $sess->revokeOwned($s2, $aliceId) === true);
 check('revoked session leaves the list', count($sess->activeForUser($aliceId, $now)) === 1);
 check('revoked row is marked', $sess->findByHash($sid2)['revoked_at'] !== null);
-$sess->rehash($sid1, hash('sha256', 'sid-1b'));
-check('session-ID rotation keeps the tracking row', $sess->findByHash(hash('sha256', 'sid-1b')) !== null && $sess->findByHash($sid1) === null);
+$sid1b = hash('sha256', 'sid-1b');
+check('session rotation succeeds for an existing session', SessionService::rotate($sid1, $sid1b) === true);
+check('session-ID rotation keeps the tracking row', $sess->findByHash($sid1b) !== null && $sess->findByHash($sid1) === null);
+check('session rotation fails for a missing session', SessionService::rotate(hash('sha256', 'missing-sid'), hash('sha256', 'new-sid')) === false);
 $sess->create($aliceId, hash('sha256', 'sid-3'), null, null, 'Edge on Windows', $future);
 // Two rows change: sid-3 and the expired-but-unrevoked sid-old. The current device (sid-1b) is kept.
 check('"sign out others" keeps the current device', $sess->revokeAllForUser($aliceId, hash('sha256', 'sid-1b')) === 2 && count($sess->activeForUser($aliceId, $now)) === 1);
 check('"sign out everywhere" revokes the rest', $sess->revokeAllForUser($aliceId) === 1 && count($sess->activeForUser($aliceId, $now)) === 0);
 check("other users' sessions untouched", count($sess->activeForUser($bobId, $now)) === 1);
 check('old session rows can be purged', $sess->purgeOld(gmdate('Y-m-d H:i:s', time() + 7200)) >= 1);
+$currentSidHash = hash('sha256', session_id());
+check('session registration succeeds', SessionService::register($aliceId) === true);
+check('registered session is stored', $sess->findByHash($currentSidHash) !== null);
+check('duplicate session registration fails safely', SessionService::register($aliceId) === false);
 check('device label: Chrome on Windows', SessionService::deviceLabel('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36') === 'Chrome on Windows');
 check('device label: Edge on Windows', SessionService::deviceLabel('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0') === 'Edge on Windows');
 check('device label: Safari on iOS', SessionService::deviceLabel('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1') === 'Safari on iOS');

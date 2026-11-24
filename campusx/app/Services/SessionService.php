@@ -18,7 +18,7 @@ final class SessionService
         return hash('sha256', (string) session_id());
     }
 
-    public static function register(int $userId): void
+    public static function register(int $userId): bool
     {
         try {
             $ua = (string) ($_SERVER['HTTP_USER_AGENT'] ?? '');
@@ -32,8 +32,10 @@ final class SessionService
                 self::deviceLabel($ua),
                 gmdate('Y-m-d H:i:s', time() + $life)
             );
+            return true;
         } catch (\Throwable $e) {
             error_log('Session register failed: ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -57,12 +59,13 @@ final class SessionService
         }
     }
 
-    public static function rotate(string $oldHash, string $newHash): void
+    public static function rotate(string $oldHash, string $newHash): bool
     {
         try {
-            (new SessionRepository())->rehash($oldHash, $newHash);
+            return (new SessionRepository())->rehash($oldHash, $newHash);
         } catch (\Throwable $e) {
             error_log('Session rotate failed: ' . $e->getMessage());
+            return false;
         }
     }
 

@@ -7,6 +7,7 @@ final class Session
     public static function start(): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) return;
+        ini_set('session.use_strict_mode', '1');
         $secure = Config::get('APP_ENV') === 'production';
         session_set_cookie_params([
             'lifetime' => 0,

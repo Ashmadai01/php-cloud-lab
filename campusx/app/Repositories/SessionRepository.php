@@ -32,9 +32,11 @@ final class SessionRepository
     }
 
     /** Session IDs are regenerated on login/password change; keep the tracking row pointing at the new ID. */
-    public function rehash(string $oldHash, string $newHash): void
+    public function rehash(string $oldHash, string $newHash): bool
     {
-        $this->db->prepare('UPDATE user_sessions SET session_id_hash = ? WHERE session_id_hash = ? AND revoked_at IS NULL')->execute([$newHash, $oldHash]);
+        $s = $this->db->prepare('UPDATE user_sessions SET session_id_hash = ? WHERE session_id_hash = ? AND revoked_at IS NULL');
+        $s->execute([$newHash, $oldHash]);
+        return $s->rowCount() === 1;
     }
 
     public function revokeByHash(string $sidHash): void
