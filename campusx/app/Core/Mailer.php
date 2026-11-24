@@ -2,32 +2,62 @@
 declare(strict_types=1);
 namespace SdutSwap\Core;
 
+use PHPMailer\PHPMailer\PHPMailer;
+use Throwable;
+
 final class Mailer
 {
     public static function send(string $to, string $subject, string $body): bool
     {
         if (!filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
+
         if (!Config::bool('MAIL_ENABLED')) {
             $log = Config::basePath() . '/storage/logs/mail.log';
             @mkdir(dirname($log), 0775, true);
             file_put_contents($log, date('c') . " TO: {$to} SUBJECT: {$subject}\n{$body}\n---\n", FILE_APPEND | LOCK_EX);
             return true;
         }
+
         $host = Config::get('MAIL_HOST');
-        $port = Config::get('MAIL_PORT', '587');
+        $port = (int) Config::get('MAIL_PORT', '587');
         $user = Config::get('MAIL_USERNAME');
         $pass = Config::get('MAIL_PASSWORD');
-        $from = Config::get('MAIL_FROM', 'noreply@example.com');
+        $from = Config::get('MAIL_FROM');
         $fromName = Config::get('MAIL_FROM_NAME', 'SDUT Swap');
-        if ($host === '') return false;
-        $headers = "From: {$fromName} <{$from}>\r\nContent-Type: text/plain; charset=UTF-8\r\n";
-        // Use mail() transport; in production configure sendmail/SMTP via server.
-        // Never log credentials.
-        $result = @mail($to, $subject, $body, $headers);
-        if (!$result) {
-            error_log("Mail send failed to {$to} (host {$host}:{$port}, user set: " . ($user !== '' ? 'yes' : 'no') . ')');
+
+        if ($host === '' || $user === '' || $pass === '' || $from === '') {
+            error_log('Mail send failed: SMTP configuration is incomplete.');
+            return false;
         }
-        return $result;
+
+        if (!class_exists(PHPMailer::class)) {
+            error_log('Mail send failed: PHPMailer is not installed. Run composer install.');
+            return false;
+        }
+
+        try {
+            $mail = new PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host = $host;
+            $mail->Port = $port;
+            $mail->SMTPAuth = true;
+            $mail->Username = $user;
+            $mail->Password = $pass;
+            $mail->SMTPSecure = ($port === 465)
+                ? PHPMailer::ENCRYPTION_SMTPS
+                : PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->CharSet = 'UTF-8';
+            $mail->setFrom($from, $fromName);
+            $mail->addAddress($to);
+            $mail->Subject = $subject;
+            $mail->Body = $body;
+            $mail->isHTML(false);
+
+            return $mail->send();
+        } catch (Throwable $e) {
+            error_log('Mail send failed: ' . $e->getMessage());
+            return false;
+        }
     }
 
     public static function verificationEmail(string $to, string $name, string $token): void
