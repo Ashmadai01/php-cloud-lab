@@ -8,8 +8,7 @@ use SdutSwap\Repositories\SessionRepository;
 /**
  * Server-side tracking of sign-ins ("sessions & devices").
  * A PHP session only counts as signed in while it has a matching, un-revoked row in user_sessions.
- * Infrastructure errors fail OPEN (logged) so a DB hiccup does not lock everyone out; the user
- * check in Auth::user() still runs on every request.
+ * Tracking and validation errors fail closed: an unverified browser session is never authenticated.
  */
 final class SessionService
 {
@@ -54,8 +53,8 @@ final class SessionService
             if ($seen === false || (time() - $seen) > 60) $repo->touch((int) $row['id']);
             return true;
         } catch (\Throwable $e) {
-            error_log('Session validate failed (failing open): ' . $e->getMessage());
-            return true;
+            error_log('Session validate failed (failing closed): ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -80,23 +79,23 @@ final class SessionService
         }
     }
 
-    public static function revokeOthers(int $userId): int
+    public static function revokeOthers(int $userId): ?int
     {
         try {
             return (new SessionRepository())->revokeAllForUser($userId, self::sidHash());
         } catch (\Throwable $e) {
             error_log('Session revokeOthers failed: ' . $e->getMessage());
-            return 0;
+            return null;
         }
     }
 
-    public static function revokeAllForUser(int $userId): int
+    public static function revokeAllForUser(int $userId): ?int
     {
         try {
             return (new SessionRepository())->revokeAllForUser($userId, null);
         } catch (\Throwable $e) {
             error_log('Session revokeAll failed: ' . $e->getMessage());
-            return 0;
+            return null;
         }
     }
 
