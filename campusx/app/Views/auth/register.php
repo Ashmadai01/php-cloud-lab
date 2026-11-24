@@ -86,7 +86,7 @@
             required>
           <label for="terms" style="font-weight:400">
             I agree to the
-            <a href=" '/terms') ?>">Terms of Service</a >
+            <a href="<?= url('/terms') ?>">Terms of Service</a>
             and
             <a href="<?= url('/privacy') ?>">Privacy Policy</a >.
           </label>
