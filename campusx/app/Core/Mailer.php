@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace SdutSwap\\Core;
+namespace SdutSwap\Core;
 
-use PHPMailer\\PHPMailer\\PHPMailer;
+use PHPMailer\PHPMailer\PHPMailer;
 use Throwable;
 
 final class Mailer
@@ -69,7 +69,6 @@ final class Mailer
     private static function emailTemplate(string $eyebrow, string $heading, string $name, string $message, string $buttonLabel, string $link, string $expiry, string $notice): string
     {
         $safe = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-        $logo = htmlspecialchars(absUrl('/assets/images/campusx-logo.svg'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $safeLink = $safe($link);
 
         return '<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . $safe($heading) . '</title></head>'
@@ -77,7 +76,7 @@ final class Mailer
             . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td align="center">'
             . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #e9e4f3;border-radius:18px;overflow:hidden;">'
             . '<tr><td style="padding:28px 36px;background:#171326;text-align:center;">'
-            . '<img src="' . $logo . '" width="220" alt="CampusX — Your Campus. Your Marketplace." style="display:block;width:220px;max-width:100%;height:auto;margin:0 auto;border:0;">'
+            . '<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr><td valign="middle" style="width:46px;height:46px;border-radius:12px;background:#7045c5;color:#ffffff;text-align:center;font-size:21px;font-weight:800;letter-spacing:-2px;">CX</td><td valign="middle" style="padding-left:12px;text-align:left;"><div style="color:#ffffff;font-size:27px;font-weight:800;letter-spacing:-1px;line-height:1.1;">Campus<span style="color:#a78bfa;">X</span></div><div style="margin-top:5px;color:#c4b5fd;font-size:9px;font-weight:700;letter-spacing:2px;">YOUR CAMPUS. YOUR MARKETPLACE.</div></td></tr></table>'
             . '</td></tr><tr><td style="padding:38px 40px 18px;">'
             . '<p style="margin:0 0 12px;color:#7650c8;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">' . $safe($eyebrow) . '</p>'
             . '<h1 style="margin:0 0 20px;color:#211b32;font-size:28px;line-height:1.25;">' . $safe($heading) . '</h1>'
