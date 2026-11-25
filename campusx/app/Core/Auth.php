@@ -66,8 +66,18 @@ final class Auth
         Csrf::rotate();
         self::$user = $user;
         self::$resolved = true;
-        (new UserRepository())->touchLogin((int) $user['id']);
-        Audit::log('login_success', 'user', (int) $user['id']);
+        // Authentication is already established. These bookkeeping operations must
+        // not turn a successful login into an ambiguous failed request.
+        try {
+            (new UserRepository())->touchLogin((int) $user['id']);
+        } catch (\\Throwable $e) {
+            error_log('Login timestamp update failed: ' . $e->getMessage());
+        }
+        try {
+            Audit::log('login_success', 'user', (int) $user['id']);
+        } catch (\\Throwable $e) {
+            error_log('Login audit failed: ' . $e->getMessage());
+        }
         return true;
     }
 
