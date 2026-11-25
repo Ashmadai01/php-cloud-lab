@@ -261,6 +261,30 @@ check('device label: Safari on iOS', SessionService::deviceLabel('Mozilla/5.0 (i
 check('device label: WeChat on Android', SessionService::deviceLabel('Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36 MicroMessenger/8.0.40') === 'WeChat on Android');
 check('device label: empty UA is generic (raw UA never stored)', SessionService::deviceLabel('') === 'Unknown device');
 
+// Suspension must remain authoritative even when session-row cleanup fails.
+echo "== Suspension failure handling ==\\n";
+$failureUserId = $users->create('Suspension Failure', 'suspension-failure@example.com', (string) $hash);
+$failureSessionHash = hash('sha256', 'suspension-failure-session');
+$sess->create($failureUserId, $failureSessionHash, null, null, 'Test device', $future);
+$users->suspend($failureUserId, 'Regression test');
+$pdo->exec("CREATE TRIGGER fail_session_revocation BEFORE UPDATE OF revoked_at ON user_sessions BEGIN SELECT RAISE(FAIL, 'simulated session revocation failure'); END");
+check('session revocation failure is reported as null', SessionService::revokeAllForUser($failureUserId) === null);
+if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+$_SESSION['user_id'] = $failureUserId;
+\\SdutSwap\\Core\\Auth::reset();
+check('suspended account remains unauthenticated after revocation failure', \\SdutSwap\\Core\\Auth::user() === null);
+\\SdutSwap\\Core\\Audit::security(
+    'session_revocation_failed',
+    'high',
+    'Session revocation failed after account suspension for user ' . $failureUserId
+);
+$failureEvent = $pdo->prepare("SELECT COUNT(*) FROM security_events WHERE event_type = 'session_revocation_failed' AND severity = 'high' AND details LIKE ?");
+$failureEvent->execute(['%user ' . $failureUserId]);
+check('failed revocation creates a high-severity security event', (int) $failureEvent->fetchColumn() === 1);
+$pdo->exec('DROP TRIGGER fail_session_revocation');
+\\SdutSwap\\Core\\Auth::reset();
+\\SdutSwap\\Core\\Auth::logout();
+
 echo "== Admin re-authentication ==\n";
 check('no confirmation means not fresh', ReauthService::isFresh([], 1000, 600) === false);
 $rs = [];
