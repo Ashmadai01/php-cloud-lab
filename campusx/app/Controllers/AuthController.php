@@ -151,11 +151,18 @@ final class AuthController extends Controller
         }
         $hash = password_hash($password, PASSWORD_ARGON2ID, ['memory_cost' => 65536, 'time_cost' => 4, 'threads' => 2]);
         if ($hash === false) $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
-        (new UserRepository())->updatePassword($userId, (string) $hash);
+        if ($hash === false || !(new UserRepository())->updatePassword($userId, $hash)) {
+            $this->view('auth/reset', ['title' => 'Reset password', 'token' => '', 'errors' => ['password' => ['The password could not be updated. Please request a new reset link.']]], 500);
+        }
         // A reset means the old password may be compromised: sign the account out everywhere.
-        SessionService::revokeAllForUser($userId);
-        \SdutSwap\Core\Audit::security('password_reset', 'medium', 'Password reset completed', $userId);
-        flash('success', 'Your password has been reset. Please sign in.');
+        // A null result means revocation failed; never report a successful global sign-out.
+        if (SessionService::revokeAllForUser($userId) === null) {
+            error_log('Password reset completed but session revocation failed for user ' . $userId);
+            flash('error', 'Your password was changed, but we could not confirm that all devices were signed out. Please contact support.');
+            redirect('/login');
+        }
+        \SdutSwap\Core\Audit::security('password_reset', 'medium', 'Password reset completed and sessions revoked', $userId);
+        flash('success', 'Your password has been reset. All devices have been signed out; please sign in again.');
         redirect('/login');
     }
 
