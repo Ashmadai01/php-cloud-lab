@@ -113,16 +113,20 @@ final class ProfileController extends Controller
             $this->renderProfile(['errors' => ['new_password' => ['The password could not be updated. Please try again.']]], 500);
         }
         if (!\SdutSwap\Core\Session::regenerate(true)) {
-            SessionService::revokeAllForUser((int) Auth::id());
+            $revoked = SessionService::revokeAllForUser((int) Auth::id());
             Auth::logout();
-            flash('error', 'Your password was changed, but your session could not be secured. Please sign in again.');
+            flash('error', $revoked === null
+                ? 'Your password was changed, but we could not confirm that all devices were signed out. Please contact support.'
+                : 'Your password was changed and all devices were signed out. Please sign in again.');
             redirect('/login');
         }
         $closed = SessionService::revokeOthers((int) Auth::id());
         if ($closed === null) {
-            SessionService::revokeAllForUser((int) Auth::id());
+            $revoked = SessionService::revokeAllForUser((int) Auth::id());
             Auth::logout();
-            flash('error', 'Your password was changed, but device sessions could not be verified. Please sign in again.');
+            flash('error', $revoked === null
+                ? 'Your password was changed, but we could not confirm that all devices were signed out. Please contact support.'
+                : 'Your password was changed and all devices were signed out. Please sign in again.');
             redirect('/login');
         }
         Audit::security('password_changed', 'medium', "Password changed; {$closed} other session(s) revoked");
