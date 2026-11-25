@@ -137,10 +137,11 @@ $router->get('/messages/{id}', fn($id) => $chat->thread((int) $id), [$mAuth]);
 $router->post('/messages/{id}/send', fn($id) => $chat->send((int) $id), [$mAuth, $mCsrf]);
 $router->post('/messages/{id}/typing', fn($id) => $chat->typing((int) $id), [$mAuth, $mCsrf]);
 $router->get('/messages/{id}/poll', fn($id) => $chat->poll((int) $id), [$mAuth]);
+$router->post('/messages/{id}/status', fn($id) => $chat->updateStatus((int) $id), [$mAuth, $mCsrf]);
 
 // Notifications
 $router->get('/notifications', fn() => $notifications->index(), [$mAuth]);
-$router->get('/notifications/{id}/open', fn($id) => $notifications->open((int) $id), [$mAuth]);
+$router->post('/notifications/{id}/open', fn($id) => $notifications->open((int) $id), [$mAuth, $mCsrf]);
 $router->post('/notifications/{id}/read', fn($id) => $notifications->markRead((int) $id), [$mAuth, $mCsrf]);
 $router->post('/notifications/read-all', fn() => $notifications->markAllRead(), [$mAuth, $mCsrf]);
 
