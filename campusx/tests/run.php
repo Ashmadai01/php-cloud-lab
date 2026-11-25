@@ -262,7 +262,7 @@ check('device label: WeChat on Android', SessionService::deviceLabel('Mozilla/5.
 check('device label: empty UA is generic (raw UA never stored)', SessionService::deviceLabel('') === 'Unknown device');
 
 // Suspension must remain authoritative even when session-row cleanup fails.
-echo "== Suspension failure handling ==\\n";
+echo "== Suspension failure handling ==\n";
 $failureUserId = $users->create('Suspension Failure', 'suspension-failure@example.com', (string) $hash);
 $failureSessionHash = hash('sha256', 'suspension-failure-session');
 $sess->create($failureUserId, $failureSessionHash, null, null, 'Test device', $future);
