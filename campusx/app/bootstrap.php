@@ -98,7 +98,8 @@ $router->get('/forgot-password', fn() => $auth->showForgot());
 $router->post('/forgot-password', fn() => $auth->forgot(), [$mCsrf]);
 $router->get('/reset-password', fn() => $auth->showReset());
 $router->post('/reset-password', fn() => $auth->reset(), [$mCsrf]);
-$router->get('/verify-email', fn() => $auth->verifyEmail());
+$router->get('/verify-email', fn() => $auth->showVerifyEmail());
+$router->post('/verify-email', fn() => $auth->verifyEmail(), [$mCsrf]);
 $router->post('/resend-verification', fn() => $auth->resendVerification(), [$mCsrf]);
 
 // Account
