@@ -89,8 +89,7 @@ final class Upload
             @unlink($src);
             return ['ok' => false, 'error' => 'Could not prepare private storage.'];
         }
-        if (!@rename($src, $dest)) {
-            @unlink($src);
+        if (!self::moveFile($src, $dest)) {
             return ['ok' => false, 'error' => 'Could not move image to private storage.'];
         }
         if (!@chmod($dest, 0600)) {
@@ -98,6 +97,20 @@ final class Upload
             return ['ok' => false, 'error' => 'Could not secure private image permissions.'];
         }
         return ['ok' => true, 'path' => $result['path'], 'mime' => $result['mime']];
+    }
+
+    /**
+     * Moves a staged upload into private storage.
+     * The optional mover is a narrow test seam for simulating filesystem failures.
+     */
+    private static function moveFile(string $src, string $dest, ?callable $mover = null): bool
+    {
+        $move = $mover ?? static fn(string $from, string $to): bool => @rename($from, $to);
+        if (!$move($src, $dest)) {
+            @unlink($src);
+            return false;
+        }
+        return true;
     }
 
     /** Turns PHP's $_FILES['x'] (single or x[] multi-upload) into a flat list of single-file arrays. */
