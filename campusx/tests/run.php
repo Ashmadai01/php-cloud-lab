@@ -322,6 +322,34 @@ check('low-severity events do not alert', AlertService::shouldAlert('login_faile
 check('high-severity events alert', AlertService::shouldAlert('chat_idor_attempt', 'high') === true);
 check('rate-limit lockouts alert', AlertService::shouldAlert('rate_limit_block', 'medium') === true);
 
+echo "== Private upload path boundaries ==\n";
+$privateRoot = Config::basePath() . '/' . trim(Config::get('PRIVATE_DIR', 'storage/private'), '/');
+$privateReal = realpath($privateRoot);
+$privateTag = bin2hex(random_bytes(4));
+$insideRel = "path-test-{$privateTag}.jpg";
+$insideFile = $privateRoot . '/' . $insideRel;
+file_put_contents($insideFile, 'private');
+check('privateFullPath accepts a file inside private storage', Upload::privateFullPath($insideRel) === realpath($insideFile));
+$siblingRoot = dirname($privateRoot) . '/' . basename($privateRoot) . '-escape';
+if (!is_dir($siblingRoot)) mkdir($siblingRoot, 0775, true);
+$siblingFile = $siblingRoot . "/outside-{$privateTag}.jpg";
+file_put_contents($siblingFile, 'outside');
+$siblingRel = '../' . basename($siblingRoot) . '/' . basename($siblingFile);
+check('privateFullPath rejects a sibling directory sharing the private path prefix', Upload::privateFullPath($siblingRel) === null);
+@unlink($insideFile);
+@unlink($siblingFile);
+@rmdir($siblingRoot);
+
+$moveTestDir = Config::basePath() . '/storage/uploads/move-failure-test';
+if (!is_dir($moveTestDir)) mkdir($moveTestDir, 0775, true);
+$stagedPublicFile = $moveTestDir . '/staged-' . bin2hex(random_bytes(4)) . '.jpg';
+$privateDestination = Config::basePath() . '/storage/private/move-failure-test/destination.jpg';
+file_put_contents($stagedPublicFile, 'staged image bytes');
+$moveMethod = new ReflectionMethod(Upload::class, 'moveFile');
+$moveSucceeded = $moveMethod->invoke(null, $stagedPublicFile, $privateDestination, static fn(string $from, string $to): bool => false);
+check('failed private move is reported and staged public file is removed', $moveSucceeded === false && !is_file($stagedPublicFile));
+@rmdir($moveTestDir);
+
 echo "== Multi-file uploads ==\n";
 $multi = ['name' => ['a.jpg', 'b.png'], 'type' => ['', ''], 'tmp_name' => ['/t/a', '/t/b'], 'error' => [0, 4], 'size' => [10, 0]];
 $norm = Upload::normalizeMulti($multi);

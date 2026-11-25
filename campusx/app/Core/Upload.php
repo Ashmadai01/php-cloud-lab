@@ -73,15 +73,44 @@ final class Upload
         if (!$result['ok']) return $result;
         // Move from uploads to private if needed — storeImage already used UPLOAD_DIR base.
         // Re-resolve: files are under UPLOAD_DIR; for private we relocate.
-        $src = Config::basePath() . '/' . trim(Config::get('UPLOAD_DIR', 'storage/uploads'), '/') . '/' . $result['path'];
-        $privBase = Config::basePath() . '/' . trim(Config::get('PRIVATE_DIR', 'storage/private'), '/');
-        $dest = $privBase . '/' . $result['path'];
-        if (!is_dir(dirname($dest))) mkdir(dirname($dest), 0775, true);
-        if (is_file($src)) {
-            rename($src, $dest);
-            @chmod($dest, 0600);
+        $basePath = Config::basePath();
+        $srcBase = realpath($basePath . '/' . trim(Config::get('UPLOAD_DIR', 'storage/uploads'), '/'));
+        $privRoot = $basePath . '/' . trim(Config::get('PRIVATE_DIR', 'storage/private'), '/');
+        $src = $srcBase === false ? false : realpath($srcBase . '/' . $result['path']);
+        $dest = $privRoot . '/' . $result['path'];
+        $destDir = dirname($dest);
+
+        $sourcePrefix = $srcBase === false ? '' : rtrim($srcBase, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if ($src === false || !str_starts_with($src, $sourcePrefix) || !is_file($src)) {
+            if ($src !== false && is_file($src)) @unlink($src);
+            return ['ok' => false, 'error' => 'Could not move image to private storage.'];
+        }
+        if (!is_dir($destDir) && !mkdir($destDir, 0700, true) && !is_dir($destDir)) {
+            @unlink($src);
+            return ['ok' => false, 'error' => 'Could not prepare private storage.'];
+        }
+        if (!self::moveFile($src, $dest)) {
+            return ['ok' => false, 'error' => 'Could not move image to private storage.'];
+        }
+        if (!@chmod($dest, 0600)) {
+            @unlink($dest);
+            return ['ok' => false, 'error' => 'Could not secure private image permissions.'];
         }
         return ['ok' => true, 'path' => $result['path'], 'mime' => $result['mime']];
+    }
+
+    /**
+     * Moves a staged upload into private storage.
+     * The optional mover is a narrow test seam for simulating filesystem failures.
+     */
+    private static function moveFile(string $src, string $dest, ?callable $mover = null): bool
+    {
+        $move = $mover ?? static fn(string $from, string $to): bool => @rename($from, $to);
+        if (!$move($src, $dest)) {
+            @unlink($src);
+            return false;
+        }
+        return true;
     }
 
     /** Turns PHP's $_FILES['x'] (single or x[] multi-upload) into a flat list of single-file arrays. */
@@ -138,7 +167,8 @@ final class Upload
         $base = realpath(Config::basePath() . '/' . trim(Config::get('UPLOAD_DIR', 'storage/uploads'), '/'));
         if ($base === false) return;
         $full = realpath($base . '/' . ltrim($storedPath, '/'));
-        if ($full !== false && str_starts_with($full, $base) && is_file($full)) unlink($full);
+        $basePrefix = rtrim($base, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if ($full !== false && str_starts_with($full, $basePrefix) && is_file($full)) unlink($full);
     }
 
     /** Deletes a file from private storage (path validated against PRIVATE_DIR). Returns true if a file was removed. */
@@ -154,7 +184,8 @@ final class Upload
         $base = realpath(Config::basePath() . '/' . trim(Config::get('PRIVATE_DIR', 'storage/private'), '/'));
         if ($base === false) return null;
         $full = realpath($base . '/' . ltrim($storedPath, '/'));
-        if ($full === false || !str_starts_with($full, $base) || !is_file($full)) return null;
+        $basePrefix = rtrim($base, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if ($full === false || !str_starts_with($full, $basePrefix) || !is_file($full)) return null;
         return $full;
     }
 }
