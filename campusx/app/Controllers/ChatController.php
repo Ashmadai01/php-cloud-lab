@@ -51,7 +51,6 @@ final class ChatController extends Controller
             \SdutSwap\Core\Audit::security('chat_idor_attempt', 'high', "User attempted to access conversation {$id}");
             abort(403, 'Forbidden');
         }
-        $repo->markRead($id, Auth::id());
         $conv = $repo->conversation($id);
         $transactionRepo = new \SdutSwap\Repositories\TransactionRepository();
         $currentTransaction = $transactionRepo->latestForConversation($id, Auth::id());
@@ -166,14 +165,6 @@ final class ChatController extends Controller
             return;
         }
 
-        $repo->markDelivered($id, $userId);
-
-        $shouldMarkRead = (string) $this->input('read', '0') === '1';
-
-        if ($shouldMarkRead) {
-            $repo->markRead($id, $userId);
-        }
-
         $after = (int) $this->input('after', '0');
         $msgs = $repo->messages($id, $after > 0 ? $after : null, 50);
 
@@ -198,6 +189,27 @@ final class ChatController extends Controller
                 : ['online' => false, 'last_seen' => null],
             'typing' => $typing,
         ]);
+    }
+
+    public function updateStatus(int $id): void
+    {
+        Auth::requireLogin();
+        $this->requireCsrf();
+
+        $repo = new ChatRepository();
+        $userId = Auth::id();
+
+        if (!$repo->isParticipant($id, $userId)) {
+            $this->json(['error' => 'Forbidden'], 403);
+            return;
+        }
+
+        $repo->markDelivered($id, $userId);
+        if ((string) $this->input('read', '0') === '1') {
+            $repo->markRead($id, $userId);
+        }
+
+        $this->json(['success' => true]);
     }
 
     public function typing(int $id): void
