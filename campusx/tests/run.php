@@ -340,6 +340,16 @@ check('privateFullPath rejects a sibling directory sharing the private path pref
 @unlink($siblingFile);
 @rmdir($siblingRoot);
 
+$moveTestDir = Config::basePath() . '/storage/uploads/move-failure-test';
+if (!is_dir($moveTestDir)) mkdir($moveTestDir, 0775, true);
+$stagedPublicFile = $moveTestDir . '/staged-' . bin2hex(random_bytes(4)) . '.jpg';
+$privateDestination = Config::basePath() . '/storage/private/move-failure-test/destination.jpg';
+file_put_contents($stagedPublicFile, 'staged image bytes');
+$moveMethod = new ReflectionMethod(Upload::class, 'moveFile');
+$moveSucceeded = $moveMethod->invoke(null, $stagedPublicFile, $privateDestination, static fn(string $from, string $to): bool => false);
+check('failed private move is reported and staged public file is removed', $moveSucceeded === false && !is_file($stagedPublicFile));
+@rmdir($moveTestDir);
+
 echo "== Multi-file uploads ==\n";
 $multi = ['name' => ['a.jpg', 'b.png'], 'type' => ['', ''], 'tmp_name' => ['/t/a', '/t/b'], 'error' => [0, 4], 'size' => [10, 0]];
 $norm = Upload::normalizeMulti($multi);
