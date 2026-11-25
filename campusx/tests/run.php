@@ -9,6 +9,7 @@ ob_start();
 // XSS encoding, SQLi resistance, upload validation.
 
 define('SDUTSWAP_NO_DISPATCH', true);
+define('SDUTSWAP_TESTING', true);
 require dirname(__DIR__) . '/app/bootstrap.php';
 
 use SdutSwap\Core\Config;
@@ -17,6 +18,7 @@ use SdutSwap\Core\Database;
 use SdutSwap\Core\Router;
 use SdutSwap\Core\Upload;
 use SdutSwap\Core\Validator;
+use SdutSwap\Controllers\AdminController;
 use SdutSwap\Middleware\Middleware;
 use SdutSwap\Middleware\RequireAdmin;
 use SdutSwap\Middleware\RequireAuth;
@@ -263,26 +265,37 @@ check('device label: Safari on iOS', SessionService::deviceLabel('Mozilla/5.0 (i
 check('device label: WeChat on Android', SessionService::deviceLabel('Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36 MicroMessenger/8.0.40') === 'WeChat on Android');
 check('device label: empty UA is generic (raw UA never stored)', SessionService::deviceLabel('') === 'Unknown device');
 
-// Suspension must remain authoritative even when session-row cleanup fails.
-echo "== Suspension failure handling ==\n";
-$failureUserId = $users->create('Suspension Failure', 'suspension-failure@example.com', (string) $hash);
-$failureSessionHash = hash('sha256', 'suspension-failure-session');
-$sess->create($failureUserId, $failureSessionHash, null, null, 'Test device', $future);
-$users->suspend($failureUserId, 'Regression test');
-$pdo->exec("CREATE TRIGGER fail_session_revocation BEFORE UPDATE OF revoked_at ON user_sessions BEGIN SELECT RAISE(FAIL, 'simulated session revocation failure'); END");
-check('session revocation failure is reported as null', SessionService::revokeAllForUser($failureUserId) === null);
+// Exercise the real AdminController action for successful and failed revocation.
+echo "== Admin suspension integration ==\n";
+$admin = $users->findById($adminId);
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
-$_SESSION['user_id'] = $failureUserId;
-\SdutSwap\Core\Auth::reset();
-check('suspended account remains unauthenticated after revocation failure', \SdutSwap\Core\Auth::user() === null);
-\SdutSwap\Core\Audit::security(
-    'session_revocation_failed',
-    'high',
-    'Session revocation failed after account suspension for user ' . $failureUserId
-);
+check('admin session can be established for controller test', $admin !== null && \SdutSwap\Core\Auth::login($admin));
+$csrf = Csrf::token();
+$_POST = ['_csrf' => $csrf, 'reason' => 'Integration test'];
+$successTargetId = $users->create('Suspend Success', 'suspend-success@example.com', (string) $hash);
+$sess->create($successTargetId, hash('sha256', 'suspend-success-session'), null, null, 'Test device', $future);
+$redirected = null;
+try { (new AdminController())->suspendUser($successTargetId); }
+catch (RuntimeException $e) { $redirected = $e->getMessage(); }
+$successFlash = $_SESSION['_flash'][array_key_last($_SESSION['_flash'] ?? [])] ?? [];
+check('controller redirects after successful suspension', $redirected === 'Test redirect: /admin/users');
+check('controller success path suspends target account', !empty($users->findById($successTargetId)['suspended_at']));
+check('controller success path revokes target sessions', count($sess->activeForUser($successTargetId, gmdate('Y-m-d H:i:s'))) === 0);
+check('controller success path flashes revoked session count', str_contains((string) ($successFlash['message'] ?? ''), '1 active session(s) revoked.'));
+$failureUserId = $users->create('Suspension Failure', 'suspension-failure@example.com', (string) $hash);
+$sess->create($failureUserId, hash('sha256', 'suspension-failure-session'), null, null, 'Test device', $future);
+$pdo->exec("CREATE TRIGGER fail_session_revocation BEFORE UPDATE OF revoked_at ON user_sessions BEGIN SELECT RAISE(FAIL, 'simulated session revocation failure'); END");
+$_POST = ['_csrf' => $csrf, 'reason' => 'Integration failure test'];
+$redirected = null;
+try { (new AdminController())->suspendUser($failureUserId); }
+catch (RuntimeException $e) { $redirected = $e->getMessage(); }
+$failureFlash = $_SESSION['_flash'][array_key_last($_SESSION['_flash'] ?? [])] ?? [];
+check('controller redirects after failed revocation', $redirected === 'Test redirect: /admin/users');
+check('controller still suspends account when revocation fails', !empty($users->findById($failureUserId)['suspended_at']));
+check('controller reports incomplete device sign-out to admin', str_contains((string) ($failureFlash['message'] ?? ''), 'could not confirm that all devices were signed out'));
 $failureEvent = $pdo->prepare("SELECT COUNT(*) FROM security_events WHERE event_type = 'session_revocation_failed' AND severity = 'high' AND details LIKE ?");
 $failureEvent->execute(['%user ' . $failureUserId]);
-check('failed revocation creates a high-severity security event', (int) $failureEvent->fetchColumn() === 1);
+check('controller records high-severity revocation failure event', (int) $failureEvent->fetchColumn() === 1);
 $pdo->exec('DROP TRIGGER fail_session_revocation');
 \SdutSwap\Core\Auth::reset();
 \SdutSwap\Core\Auth::logout();
