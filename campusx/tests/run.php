@@ -375,6 +375,65 @@ check('report keeps several evidence files', count($evs) === 2);
 $ev1 = $support->findEvidence((int) $evs[0]['id']);
 check('evidence belongs to its report', $ev1 !== null && (int) $ev1['report_id'] === $rid2);
 
+echo "== IDOR ownership regression tests ==\n";
+
+// Two independent ticket owners, with one private attachment each.
+$ownerTicketA = $support->createTicket($aliceId, 'help', 'Account', 'Alice private ticket', 'normal', 'Alice private details.', ['support/idor-alice.jpg']);
+$ownerTicketB = $support->createTicket($bobId, 'help', 'Account', 'Bob private ticket', 'normal', 'Bob private details.', ['support/idor-bob.jpg']);
+$aliceTickets = $support->ticketsForUser($aliceId);
+$bobTickets = $support->ticketsForUser($bobId);
+$aliceAttachment = $support->ticketMessages($ownerTicketA)[0]['attachments'][0] ?? 0;
+$bobAttachment = $support->ticketMessages($ownerTicketB)[0]['attachments'][0] ?? 0;
+$aliceAttachmentRow = $support->findAttachment((int) $aliceAttachment);
+$bobAttachmentRow = $support->findAttachment((int) $bobAttachment);
+check('ticket list is scoped to Alice and excludes Bob ticket', count(array_filter($aliceTickets, fn(array $t): bool => (int) $t['id'] === $ownerTicketA)) === 1 && count(array_filter($aliceTickets, fn(array $t): bool => (int) $t['id'] === $ownerTicketB)) === 0);
+check('ticket list is scoped to Bob and excludes Alice ticket', count(array_filter($bobTickets, fn(array $t): bool => (int) $t['id'] === $ownerTicketB)) === 1 && count(array_filter($bobTickets, fn(array $t): bool => (int) $t['id'] === $ownerTicketA)) === 0);
+check('Alice attachment resolves only to Alice ticket owner', $aliceAttachmentRow !== null && (int) $aliceAttachmentRow['owner_id'] === $aliceId && (int) $aliceAttachmentRow['ticket_id'] === $ownerTicketA);
+check('Bob attachment resolves only to Bob ticket owner', $bobAttachmentRow !== null && (int) $bobAttachmentRow['owner_id'] === $bobId && (int) $bobAttachmentRow['ticket_id'] === $ownerTicketB);
+check('attachment identifiers are distinct across ticket owners', (int) $aliceAttachment !== (int) $bobAttachment);
+
+// A message target is reportable only by a participant who did not send it.
+$reportMessageId = $chat->send($convId, $bobId, 'Message for report authorization test.');
+$reportMessage = $chat->findMessage($reportMessageId);
+check('message report target resolves to its exact conversation and sender', $reportMessage !== null && (int) $reportMessage['conversation_id'] === $convId && (int) $reportMessage['sender_id'] === $bobId);
+check('message reporter participant other than sender is eligible', $reportMessage !== null && $chat->isParticipant((int) $reportMessage['conversation_id'], $aliceId) && (int) $reportMessage['sender_id'] !== $aliceId);
+check('message sender cannot report own message', $reportMessage !== null && $chat->isParticipant((int) $reportMessage['conversation_id'], $bobId) && (int) $reportMessage['sender_id'] === $bobId);
+check('non-participant cannot report another conversation message', $reportMessage !== null && !$chat->isParticipant((int) $reportMessage['conversation_id'], $charlieId));
+
+// Evidence IDs must remain bound to their parent report; swapping report IDs is rejected.
+$aliceReportWithEvidence = $support->createReport($aliceId, 'message', $reportMessageId, 'harassment', 'Please review this message.', ['evidence/idor-alice.jpg']);
+$bobReportWithEvidence = $support->createReport($bobId, 'listing', $lid, 'spam', 'Please review this listing.', ['evidence/idor-bob.jpg']);
+$aliceEvidence = $support->reportEvidence($aliceReportWithEvidence);
+$bobEvidence = $support->reportEvidence($bobReportWithEvidence);
+$aliceEvidenceRow = $support->findEvidence((int) ($aliceEvidence[0]['id'] ?? 0));
+$bobEvidenceRow = $support->findEvidence((int) ($bobEvidence[0]['id'] ?? 0));
+check('Alice report evidence belongs to Alice report', $aliceEvidenceRow !== null && (int) $aliceEvidenceRow['report_id'] === $aliceReportWithEvidence);
+check('Bob report evidence belongs to Bob report', $bobEvidenceRow !== null && (int) $bobEvidenceRow['report_id'] === $bobReportWithEvidence);
+check('Alice evidence cannot be paired with Bob report ID', $aliceEvidenceRow !== null && (int) $aliceEvidenceRow['report_id'] !== $bobReportWithEvidence);
+check('Bob evidence cannot be paired with Alice report ID', $bobEvidenceRow !== null && (int) $bobEvidenceRow['report_id'] !== $aliceReportWithEvidence);
+
+// Static policy guards tie the fixtures to the controller authorization conditions.
+$supportControllerSource = file_get_contents(Config::basePath() . '/app/Controllers/SupportController.php');
+$adminControllerSource = file_get_contents(Config::basePath() . '/app/Controllers/AdminController.php');
+$showTicketStart = strpos($supportControllerSource, 'public function showTicket(');
+$replyTicketStart = strpos($supportControllerSource, 'public function replyTicket(');
+$attachmentStart = strpos($supportControllerSource, 'public function attachment(');
+$reportableStart = strpos($supportControllerSource, 'private function assertReportable(');
+$showTicketSource = substr($supportControllerSource, $showTicketStart, $replyTicketStart - $showTicketStart);
+$replyTicketSource = substr($supportControllerSource, $replyTicketStart, $attachmentStart - $replyTicketStart);
+$attachmentSource = substr($supportControllerSource, $attachmentStart);
+$reportableSource = substr($supportControllerSource, $reportableStart);
+$adminEvidenceStart = strpos($adminControllerSource, 'public function evidence(');
+$adminEvidenceEnd = strpos($adminControllerSource, 'public function decideReport(', $adminEvidenceStart);
+$adminEvidenceSource = substr($adminControllerSource, $adminEvidenceStart, $adminEvidenceEnd - $adminEvidenceStart);
+check('ticket view allows owner and admin but rejects other users', str_contains($showTicketSource, "(int) \$ticket['user_id'] !== Auth::id()") && str_contains($showTicketSource, '!Auth::isAdmin()') && str_contains($showTicketSource, 'abort(403'));
+check('ticket reply allows owner and admin but rejects other users', str_contains($replyTicketSource, "(int) \$ticket['user_id'] !== Auth::id()") && str_contains($replyTicketSource, '!Auth::isAdmin()') && str_contains($replyTicketSource, 'abort(403'));
+check('attachment access is owner-or-admin and denies other users', str_contains($attachmentSource, "(int) \$att['owner_id'] !== (int) Auth::id()") && str_contains($attachmentSource, '!Auth::isAdmin()') && str_contains($attachmentSource, 'abort(403'));
+check('conversation report requires participation', str_contains($reportableSource, 'isParticipant($id, $me)'));
+check('message report requires participation and excludes sender', str_contains($reportableSource, "isParticipant((int) \$msg['conversation_id'], \$me)") && str_contains($reportableSource, "(int) \$msg['sender_id'] !== \$me"));
+check('admin evidence endpoint rejects mismatched parent report ID', str_contains($adminEvidenceSource, "(int) \$ev['report_id'] !== \$reportId") && str_contains($adminEvidenceSource, 'abort(404'));
+check('admin evidence endpoint requires admin role', str_contains($adminEvidenceSource, 'Auth::requireAdmin()'));
+
 echo "== Retention policy ==\n";
 $priv = Config::basePath() . '/' . trim(Config::get('PRIVATE_DIR', 'storage/private'), '/');
 foreach (['cards', 'support', 'evidence'] as $d) { if (!is_dir($priv . '/' . $d)) mkdir($priv . '/' . $d, 0775, true); }
