@@ -440,6 +440,15 @@ foreach ([['POST', '/admin/users/{id}/suspend'], ['POST', '/admin/users/{id}/res
     $row = $find($m, $pat);
     check("sensitive admin action {$pat} requires recent password confirmation", $row !== null && in_array(RequireRecentAuth::class, $row['middleware'], true));
 }
+check('notification open is POST, not GET', $find('POST', '/notifications/{id}/open') !== null && $find('GET', '/notifications/{id}/open') === null);
+check('notification open POST requires CSRF', $find('POST', '/notifications/{id}/open') !== null && in_array(RequireCsrf::class, $find('POST', '/notifications/{id}/open')['middleware'], true));
+check('chat status update is POST, not GET', $find('POST', '/messages/{id}/status') !== null && $find('GET', '/messages/{id}/status') === null);
+check('chat status update POST requires CSRF', $find('POST', '/messages/{id}/status') !== null && in_array(RequireCsrf::class, $find('POST', '/messages/{id}/status')['middleware'], true));
+$chatControllerSource = file_get_contents(Config::basePath() . '/app/Controllers/ChatController.php');
+$threadSource = substr($chatControllerSource, strpos($chatControllerSource, 'public function thread('), strpos($chatControllerSource, 'public function send(') - strpos($chatControllerSource, 'public function thread('));
+$pollSource = substr($chatControllerSource, strpos($chatControllerSource, 'public function poll('), strpos($chatControllerSource, 'public function updateStatus(') - strpos($chatControllerSource, 'public function poll('));
+check('chat thread GET does not mark messages read', !str_contains($threadSource, 'markRead('));
+check('chat poll GET does not update delivery or read status', !str_contains($pollSource, 'markDelivered(') && !str_contains($pollSource, 'markRead('));
 foreach ([['GET', '/profile'], ['GET', '/sell'], ['GET', '/messages/{id}'], ['GET', '/support/attachments/{id}'], ['POST', '/users/{id}/block'], ['POST', '/profile/sessions/{id}/revoke']] as [$m, $pat]) {
     $row = $find($m, $pat);
     check("{$m} {$pat} requires sign-in", $row !== null && in_array(RequireAuth::class, $row['middleware'], true));
