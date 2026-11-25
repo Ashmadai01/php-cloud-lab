@@ -154,7 +154,8 @@ final class Upload
         $base = realpath(Config::basePath() . '/' . trim(Config::get('UPLOAD_DIR', 'storage/uploads'), '/'));
         if ($base === false) return;
         $full = realpath($base . '/' . ltrim($storedPath, '/'));
-        if ($full !== false && str_starts_with($full, $base) && is_file($full)) unlink($full);
+        $basePrefix = rtrim($base, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if ($full !== false && str_starts_with($full, $basePrefix) && is_file($full)) unlink($full);
     }
 
     /** Deletes a file from private storage (path validated against PRIVATE_DIR). Returns true if a file was removed. */
