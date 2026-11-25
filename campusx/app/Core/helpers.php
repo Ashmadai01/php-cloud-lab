@@ -39,6 +39,9 @@ function url(string $path): string
 
 function redirect(string $path): never
 {
+    if (defined('SDUTSWAP_TESTING') && SDUTSWAP_TESTING) {
+        throw new RuntimeException('Test redirect: ' . url($path));
+    }
     header('Location: ' . url($path));
     exit;
 }
