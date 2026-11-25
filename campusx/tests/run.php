@@ -1,5 +1,7 @@
 <?php
 declare(strict_types=1);
+// Buffer test output so session headers can still be managed during tests.
+ob_start();
 // SDUT Swap test suite — runs against an in-memory SQLite database.
 // Usage: php tests/run.php
 // Covers: validators, auth hashing, listing CRUD, favorites, verification,
