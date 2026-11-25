@@ -271,9 +271,9 @@ $pdo->exec("CREATE TRIGGER fail_session_revocation BEFORE UPDATE OF revoked_at O
 check('session revocation failure is reported as null', SessionService::revokeAllForUser($failureUserId) === null);
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 $_SESSION['user_id'] = $failureUserId;
-\\SdutSwap\\Core\\Auth::reset();
-check('suspended account remains unauthenticated after revocation failure', \\SdutSwap\\Core\\Auth::user() === null);
-\\SdutSwap\\Core\\Audit::security(
+\SdutSwap\\Core\\Auth::reset();
+check('suspended account remains unauthenticated after revocation failure', \SdutSwap\\Core\\Auth::user() === null);
+\SdutSwap\\Core\\Audit::security(
     'session_revocation_failed',
     'high',
     'Session revocation failed after account suspension for user ' . $failureUserId
@@ -282,8 +282,8 @@ $failureEvent = $pdo->prepare("SELECT COUNT(*) FROM security_events WHERE event_
 $failureEvent->execute(['%user ' . $failureUserId]);
 check('failed revocation creates a high-severity security event', (int) $failureEvent->fetchColumn() === 1);
 $pdo->exec('DROP TRIGGER fail_session_revocation');
-\\SdutSwap\\Core\\Auth::reset();
-\\SdutSwap\\Core\\Auth::logout();
+\SdutSwap\\Core\\Auth::reset();
+\SdutSwap\\Core\\Auth::logout();
 
 echo "== Admin re-authentication ==\n";
 check('no confirmation means not fresh', ReauthService::isFresh([], 1000, 600) === false);
