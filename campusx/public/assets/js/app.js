@@ -234,8 +234,8 @@ if (messageInput) {
 
 var isChatVisible = document.visibilityState === 'visible' && document.hasFocus();
 
-fetch('/messages/' + convId + '/poll?after=' + lastId + '&read=' + (isChatVisible ? '1' : '0'), {
-  headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-Token': csrf },
+fetch('/messages/' + convId + '/poll?after=' + lastId, {
+  headers: { 'X-Requested-With': 'XMLHttpRequest' },
   credentials: 'same-origin'
 }).then(function (r) {
   return r.ok ? r.json() : null;
@@ -244,6 +244,17 @@ fetch('/messages/' + convId + '/poll?after=' + lastId + '&read=' + (isChatVisibl
     delay = Math.min(delay * 1.5, 15000);
     return;
   }
+
+  fetch('/messages/' + convId + '/status', {
+    method: 'POST',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRF-Token': csrf,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: 'read=' + (isChatVisible ? '1' : '0'),
+    credentials: 'same-origin'
+  }).catch(function () {});
   var presenceEl = document.getElementById('presence-status');
   if (typingIndicator) {
   typingIndicator.style.display = data.typing ? 'block' : 'none';

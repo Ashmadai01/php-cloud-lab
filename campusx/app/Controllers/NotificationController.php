@@ -25,6 +25,7 @@ final class NotificationController extends Controller
     public function open(int $id): void
     {
         Auth::requireLogin();
+        $this->requireCsrf();
 
         $repo = new NotificationRepository();
         $userId = (int) Auth::id();
