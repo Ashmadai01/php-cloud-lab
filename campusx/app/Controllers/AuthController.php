@@ -166,8 +166,16 @@ final class AuthController extends Controller
         redirect('/login');
     }
 
+    public function showVerifyEmail(): void
+    {
+        $token = $this->input('token');
+        $this->view('auth/verify_email', ['title' => 'Confirm your email', 'token' => $token]);
+    }
+
     public function verifyEmail(): void
     {
+        $this->requireCsrf();
+        $this->rateLimit('verify_email', 10, 3600, 3600);
         $token = $this->input('token');
         $userId = (new TokenRepository())->consumeEmailVerification($token);
         if ($userId === null) {

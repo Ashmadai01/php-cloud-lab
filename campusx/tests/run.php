@@ -106,7 +106,7 @@ check('duplicate email lookup works', $users->findByEmail('alice@example.com') !
 $tokens = new TokenRepository($pdo);
 $rawToken = bin2hex(random_bytes(32));
 $tokens->createEmailVerification($aliceId, $rawToken, 24);
-check('email token consumes once', $tokens->consumeEmailVerification($rawToken) === $aliceId);
+check('email token remains valid until explicit confirmation', $tokens->consumeEmailVerification($rawToken) === $aliceId);
 check('email token single-use enforced', $tokens->consumeEmailVerification($rawToken) === null);
 $resetToken = bin2hex(random_bytes(32));
 $tokens->createPasswordReset($bobId, $resetToken, 60);
@@ -440,6 +440,15 @@ foreach ([['POST', '/admin/users/{id}/suspend'], ['POST', '/admin/users/{id}/res
     $row = $find($m, $pat);
     check("sensitive admin action {$pat} requires recent password confirmation", $row !== null && in_array(RequireRecentAuth::class, $row['middleware'], true));
 }
+$verifyGet = $find('GET', '/verify-email');
+$verifyPost = $find('POST', '/verify-email');
+check('email verification GET only displays confirmation', $verifyGet !== null && $find('POST', '/verify-email') !== null);
+check('email verification POST requires CSRF', $verifyPost !== null && in_array(RequireCsrf::class, $verifyPost['middleware'], true));
+$authControllerSource = file_get_contents(Config::basePath() . '/app/Controllers/AuthController.php');
+$showVerifySource = substr($authControllerSource, strpos($authControllerSource, 'public function showVerifyEmail('), strpos($authControllerSource, 'public function verifyEmail(') - strpos($authControllerSource, 'public function showVerifyEmail('));
+$verifyPostSource = substr($authControllerSource, strpos($authControllerSource, 'public function verifyEmail('), strpos($authControllerSource, 'public function resendVerification(') - strpos($authControllerSource, 'public function verifyEmail('));
+check('GET verification handler does not consume token', !str_contains($showVerifySource, 'consumeEmailVerification('));
+check('POST verification handler validates CSRF before consuming token', strpos($verifyPostSource, 'requireCsrf()') < strpos($verifyPostSource, 'consumeEmailVerification('));
 check('notification open is POST, not GET', $find('POST', '/notifications/{id}/open') !== null && $find('GET', '/notifications/{id}/open') === null);
 check('notification open POST requires CSRF', $find('POST', '/notifications/{id}/open') !== null && in_array(RequireCsrf::class, $find('POST', '/notifications/{id}/open')['middleware'], true));
 check('chat status update is POST, not GET', $find('POST', '/messages/{id}/status') !== null && $find('GET', '/messages/{id}/status') === null);
