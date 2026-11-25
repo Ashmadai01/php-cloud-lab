@@ -57,10 +57,12 @@
 
           <div class="notification-actions">
             <?php if ($n['ticket_id'] !== null || $isPurchase): ?>
-              <a class="btn btn-primary btn-sm"
-                 href="<?= url('/notifications/' . (int) $n['id'] . '/open') ?>">
-                <?= $isPurchase ? 'Open conversation →' : 'View ticket →' ?>
-              </a>
+              <form method="post" action="<?= url('/notifications/' . (int) $n['id'] . '/open') ?>">
+                <?= csrfField() ?>
+                <button class="btn btn-primary btn-sm" type="submit">
+                  <?= $isPurchase ? 'Open conversation →' : 'View ticket →' ?>
+                </button>
+              </form>
             <?php endif; ?>
 
             <?php if ($isUnread): ?>
