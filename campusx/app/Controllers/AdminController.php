@@ -69,9 +69,23 @@ final class AdminController extends Controller
         $reason = $this->input('reason');
         if (mb_strlen($reason) > 500) $reason = mb_substr($reason, 0, 500);
         $repo->suspend($id, $reason ?: null);
-        SessionService::revokeAllForUser($id);
         Audit::log('user_suspended', 'user', $id, $reason);
-        flash('success', 'User suspended.');
+
+        $revoked = SessionService::revokeAllForUser($id);
+        if ($revoked === null) {
+            // The account-level suspension is authoritative in Auth::user(), so
+            // protected requests will still reject this user if session cleanup fails.
+            error_log('User suspension completed but session revocation failed for user ' . $id);
+            Audit::security(
+                'session_revocation_failed',
+                'high',
+                'Session revocation failed after account suspension for user ' . $id
+            );
+            flash('error', 'User suspended, but we could not confirm that all devices were signed out. The account remains blocked. Please review the security events.');
+            redirect('/admin/users');
+        }
+
+        flash('success', 'User suspended. ' . $revoked . ' active session(s) revoked.');
         redirect('/admin/users');
     }
 

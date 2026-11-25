@@ -50,17 +50,43 @@ final class Auth
         return $u !== null && ($u['role'] ?? '') === 'admin';
     }
 
-    public static function login(array $user): void
+    public static function login(array $user): bool
     {
         if (session_status() !== PHP_SESSION_ACTIVE) Session::start();
-        Session::regenerate();
+        // A guest session has no user_sessions row to rotate.
+        if (!Session::regenerate(false)) {
+            self::failLoginClosed();
+            return false;
+        }
         $_SESSION['user_id'] = (int) $user['id'];
-        SessionService::register((int) $user['id']);
+        if (!SessionService::register((int) $user['id'])) {
+            self::failLoginClosed();
+            return false;
+        }
         Csrf::rotate();
         self::$user = $user;
         self::$resolved = true;
-        (new UserRepository())->touchLogin((int) $user['id']);
-        Audit::log('login_success', 'user', (int) $user['id']);
+        // Authentication is already established. These bookkeeping operations must
+        // not turn a successful login into an ambiguous failed request.
+        try {
+            (new UserRepository())->touchLogin((int) $user['id']);
+        } catch (\Throwable $e) {
+            error_log('Login timestamp update failed: ' . $e->getMessage());
+        }
+        try {
+            Audit::log('login_success', 'user', (int) $user['id']);
+        } catch (\Throwable $e) {
+            error_log('Login audit failed: ' . $e->getMessage());
+        }
+        return true;
+    }
+
+    private static function failLoginClosed(): void
+    {
+        SessionService::revokeCurrent();
+        self::$user = null;
+        self::$resolved = true;
+        Session::destroy();
     }
 
     public static function logout(): void

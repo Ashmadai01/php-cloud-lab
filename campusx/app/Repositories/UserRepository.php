@@ -59,10 +59,11 @@ final class UserRepository
         $s->execute([$path, $id]);
     }
 
-    public function updatePassword(int $id, string $hash): void
+    public function updatePassword(int $id, string $hash): bool
     {
         $s = $this->db->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
         $s->execute([$hash, $id]);
+        return $s->rowCount() === 1;
     }
 
     public function setVerified(int $id, bool $v): void
