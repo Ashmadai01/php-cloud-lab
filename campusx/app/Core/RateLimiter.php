@@ -1,39 +1,42 @@
 <?php
 declare(strict_types=1);
+
 namespace SdutSwap\Core;
 
 use SdutSwap\Repositories\RateLimitRepository;
 
 final class RateLimiter
 {
-    public static function check(string $bucket, int $maxAttempts, int $windowSeconds, int $blockSeconds = 900): bool
-    {
+    public static function check(
+        string $bucket,
+        int $maxAttempts,
+        int $windowSeconds,
+        int $blockSeconds = 900
+    ): bool {
         try {
-            $repo = new RateLimitRepository();
-            $row = $repo->get($bucket);
-            $now = time();
-            if ($row) {
-                if (!empty($row['blocked_until']) && strtotime((string) $row['blocked_until'] . ' UTC') > $now) {
-                    return false;
-                }
-                $windowStart = strtotime((string) $row['window_start'] . ' UTC');
-                if ($now - $windowStart > $windowSeconds) {
-                    $repo->reset($bucket);
-                    return true;
-                }
-                $attempts = (int) $row['attempts'] + 1;
-                if ($attempts > $maxAttempts) {
-                    $repo->block($bucket, $attempts, $blockSeconds);
+            $result = (new RateLimitRepository())->consume(
+                $bucket,
+                $maxAttempts,
+                $windowSeconds,
+                $blockSeconds
+            );
+
+            // Audit only after consume() has committed; audit/alert paths may use the limiter.
+            if ($result['newly_blocked']) {
+                try {
                     Audit::security('rate_limit_block', 'medium', "Bucket {$bucket} blocked");
-                    return false;
+                } catch (\Throwable $auditError) {
+                    error_log('Rate limiter audit failure: ' . $auditError->getMessage());
                 }
-                $repo->increment($bucket, $attempts);
-                return true;
             }
-            $repo->create($bucket);
-            return true;
-        } catch (\Throwable) {
-            return true; // Fail open for rate limiter infra errors to avoid lockout; auth still enforced.
+
+            return $result['allowed'];
+        } catch (\Throwable $e) {
+            error_log(
+                'Rate limiter infrastructure failure; request denied: '
+                . $e->getMessage()
+            );
+            return false;
         }
     }
 

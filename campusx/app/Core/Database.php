@@ -37,6 +37,11 @@ final class Database
 
     public static function setPdo(PDO $pdo): void
     {
+        if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            // Wait briefly for another SQLite connection holding a write lock.
+            $pdo->exec('PRAGMA busy_timeout = 5000');
+        }
+
         self::$pdo = $pdo;
     }
 
