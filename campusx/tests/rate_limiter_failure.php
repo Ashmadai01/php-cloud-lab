@@ -7,12 +7,12 @@ define('SDUTSWAP_NO_DISPATCH', true);
 define('SDUTSWAP_TESTING', true);
 require dirname(__DIR__) . '/app/bootstrap.php';
 
-use SdutSwap\\Core\\Database;
-use SdutSwap\\Core\\RateLimiter;
-use SdutSwap\\Repositories\\RateLimitRepository;
+use SdutSwap\Core\Database;
+use SdutSwap\Core\RateLimiter;
+use SdutSwap\Repositories\RateLimitRepository;
 
 if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
-    fwrite(STDERR, "SKIP: PDO SQLite driver is not installed.\\n");
+    fwrite(STDERR, "SKIP: PDO SQLite driver is not installed.\n");
     exit(2);
 }
 
@@ -21,10 +21,10 @@ $fail = 0;
 $check = static function (string $name, bool $condition) use (&$pass, &$fail): void {
     if ($condition) {
         $pass++;
-        echo "PASS: {$name}\\n";
+        echo "PASS: {$name}\n";
     } else {
         $fail++;
-        fwrite(STDERR, "FAIL: {$name}\\n");
+        fwrite(STDERR, "FAIL: {$name}\n");
     }
 };
 
@@ -106,5 +106,5 @@ $check('repository refuses nested transaction without rolling back caller transa
     $externalTransactionPreserved && !$pdo->inTransaction()
 );
 
-echo "Results: {$pass} passed, {$fail} failed\\n";
+echo "Results: {$pass} passed, {$fail} failed\n";
 exit($fail > 0 ? 1 : 0);
