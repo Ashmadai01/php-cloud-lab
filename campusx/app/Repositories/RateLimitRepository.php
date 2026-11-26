@@ -20,7 +20,13 @@ final class RateLimitRepository
 
     public function create(string $bucket): void
     {
-        $this->db->prepare('INSERT INTO rate_limits (bucket, attempts, window_start) VALUES (?, 1, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE attempts = attempts + 1')->execute([$bucket]);
+        if ($this->db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $sql = 'INSERT INTO rate_limits (bucket, attempts, window_start) VALUES (?, 1, CURRENT_TIMESTAMP) ON CONFLICT(bucket) DO UPDATE SET attempts = attempts + 1';
+        } else {
+            // Keep the production MySQL upsert unchanged.
+            $sql = 'INSERT INTO rate_limits (bucket, attempts, window_start) VALUES (?, 1, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE attempts = attempts + 1';
+        }
+        $this->db->prepare($sql)->execute([$bucket]);
     }
 
     public function increment(string $bucket, int $attempts): void
