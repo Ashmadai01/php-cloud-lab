@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace SdutSwap\\Core;
+namespace SdutSwap\Core;
 
-use SdutSwap\\Repositories\\RateLimitRepository;
+use SdutSwap\Repositories\RateLimitRepository;
 
 final class RateLimiter
 {
@@ -47,7 +47,7 @@ final class RateLimiter
 
             $repo->create($bucket);
             return true;
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             // Fail closed: if the limiter cannot be checked or updated, do not
             // allow the protected action to proceed without rate-limit enforcement.
             error_log('Rate limiter infrastructure failure; request denied: ' . $e->getMessage());
