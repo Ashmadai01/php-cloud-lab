@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace SdutSwap\\Repositories;
+namespace SdutSwap\Repositories;
 
-use SdutSwap\\Core\\Database;
+use SdutSwap\Core\Database;
 use PDO;
 use RuntimeException;
 use Throwable;
