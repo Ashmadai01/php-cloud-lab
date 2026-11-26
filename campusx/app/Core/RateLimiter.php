@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace SdutSwap\\Core;
+namespace SdutSwap\Core;
 
-use SdutSwap\\Repositories\\RateLimitRepository;
+use SdutSwap\Repositories\RateLimitRepository;
 
 final class RateLimiter
 {
@@ -25,13 +25,13 @@ final class RateLimiter
             if ($result['newly_blocked']) {
                 try {
                     Audit::security('rate_limit_block', 'medium', "Bucket {$bucket} blocked");
-                } catch (\\Throwable $auditError) {
+                } catch (\Throwable $auditError) {
                     error_log('Rate limiter audit failure: ' . $auditError->getMessage());
                 }
             }
 
             return $result['allowed'];
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             error_log(
                 'Rate limiter infrastructure failure; request denied: '
                 . $e->getMessage()
