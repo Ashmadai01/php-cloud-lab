@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-namespace SdutSwap\\Services;
+namespace SdutSwap\Services;
 
-use SdutSwap\\Core\\Config;
+use SdutSwap\Core\Config;
 
 /**
  * Google Cloud Vision SafeSearch moderation for listing photos.
@@ -52,7 +52,7 @@ final class ImageModeration
         $context = stream_context_create([
             'http' => [
                 'method' => 'POST',
-                'header' => "Content-Type: application/json\\r\\nAccept: application/json\\r\\n",
+                'header' => "Content-Type: application/json\r\nAccept: application/json\r\n",
                 'content' => $payload,
                 'timeout' => 12,
                 'ignore_errors' => true,
