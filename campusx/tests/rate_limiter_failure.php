@@ -20,6 +20,12 @@ $pdo = new PDO('sqlite::memory:');
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 Database::setPdo($pdo);
+$busyTimeout = (int) $pdo->query('PRAGMA busy_timeout')->fetchColumn();
+if ($busyTimeout !== 5000) {
+    fwrite(STDERR, "FAIL: SQLite busy_timeout was not configured through Database::setPdo().\\n");
+    exit(1);
+}
+echo "PASS: SQLite busy_timeout is configured through Database::setPdo().\\n";
 
 // Missing table simulates a repository/database failure. Protected action must be denied.
 $denied = RateLimiter::check('failure-test', 5, 60);
